@@ -71,6 +71,8 @@ Command Line tool
 
 HostDB provides a command line tool that is extremely helpful in writing those small bash one liners to get information out fast. Want to find out all machines with 24 GB of ram which are part of the search cluster. no problem!
 
+<pre>
+
 Add an object:
 $ hostdb add hosts/hostdb.ops.ch.flipkart.com
 Add host to tag:
@@ -80,18 +82,21 @@ $ hostdb get hosts/hostdb.ops.ch.flipkart.com/Network/IP
 Get tag members: 
 $ hostdb get tags/nm-prod/members
 
-
+</pre>
 
 HostDB::Client Perl Module
 --------------------------
 
 We use Perl extensively and have a Perl Module that can be used by applications to interact with HostDB.  This module provides an object oriented interface over HostDB REST API.
 
+<pre>
+
 use HostDB::Client;
 my $hdb - HostDB::Client->new(\%options);
 my $output - $hdb->get($id[, $revision, $raw]);
 my $output - $hdb->revisions($id[, $limit]);
 
+</pre>
 
 HostDB has been central to almost all software written by the devops at flipkart and has allowed us to scale exponentially without a fuss. We hope you find it useful too. HostDB is now available on github, so go fork it,
 
@@ -127,6 +132,7 @@ namespaces/
         |-- tag1     <any ACL override for tag1 - YAML>
 
 ACL file format:
+---
 user1:
   data: RO
   members: RW
