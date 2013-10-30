@@ -50,12 +50,7 @@ sub validate_credentials {
     my $ldap = Net::LDAP->new($LDAP_SERVER, port => $LDAP_PORT) or $logger->logdie("5030: Could not create LDAP object because:\n$!");
     my $ldapMsg = $ldap->bind($userDN, password => $pass);
     my $ldapSearch = $ldap->search(base => $LDAP_BASE, filter => "uid=$user");
-    my $LDAP_BASE_alt   = $conf->{LDAP_BASE_ALT};
-    my $userDN_alt       = 'uid='.$user.','.$LDAP_BASE_alt ;
-    my $ldap_alt  = Net::LDAP->new($LDAP_SERVER, port => $LDAP_PORT) or $logger->logdie("5030: Could not create LDAP object because:\n$!");
-    my $ldapMsg_alt  = $ldap->bind($userDN_alt , password => $pass);
-    my $ldapSearch_alt  = $ldap->search(base => $LDAP_BASE_alt , filter => "uid=$user");
-    if($ldapMsg->is_error && $ldapMsg_alt->is_error) {
+    if($ldapMsg->is_error) {
         $logger->logdie("4011: Invalid Credentials"); # failure
     }
     return 1;  # success

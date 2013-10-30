@@ -154,9 +154,9 @@ group1:
 
 </pre>
 
-6. All above files should be readable and writable for your apache user
-8. Restart apache
-9. Test - https://hostdb.yourdomain.com/v1/
+8. All above files should be readable and writable for your apache user
+9. Restart apache
+10. Test - https://hostdb.yourdomain.com/v1/
 
 Setting up CLI tool
 -------------------
