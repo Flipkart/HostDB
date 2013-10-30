@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Flipkart's Host Database</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link href="/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    
+    <!-- Le styles -->
+    <link href="/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+      
+      @media (max-width: 980px) {
+        /* Enable use of floated navbar text */
+        .navbar-text.pull-right {
+          float: none;
+          padding-left: 5px;
+          padding-right: 5px;
+        }
+      }
+      
+      .sidebar-nav {
+          height: 500px;
+          overflow: scroll;
+      }
+      .hero-unit {
+          padding: 20px;
+      }
+      #txtSearch, .nav, .well {
+          margin-bottom: 5px;
+      }
+      #revList {
+          width: 450px;
+      }
+    </style>
+    <link href="/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+    <script src="bootstrap/js/html5shiv.js"></script>
+    <![endif]-->
+    
+    <!-- Fav and touch icons -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="bootstrap/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="bootstrap/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="bootstrap/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="bootstrap/ico/apple-touch-icon-57-precomposed.png">
+    <link rel="shortcut icon" href="bootstrap/ico/favicon.png">
+  </head>
+
+  <body>
+    <div id="editBox" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+        <h3 id="editBoxLabel"></h3>
+      </div>
+      <div class="modal-body">
+        Name: <input type="text" id="editBoxName" style="width: 300px">
+        <div>
+          <div id="version">
+          Version: <select id="revList">
+                    </select>
+          </div>
+        </div>
+        <textarea id="editBoxText" style="width: 480px; height: 300px; font-family: courier" wrap="off"></textarea>
+        <input type="text" id="editBoxLog" style="width: 400px" placeholder="log message...">
+          
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        <button class="btn btn-primary" id="btnSaveChanges">Save changes</button>
+      </div>
+    </div>
+<!--    <div id="editTags" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+        <h3 id="editBoxLabel"></h3>
+      </div>
+      <div class="modal-body">
+        Name: <input type="text" id="editBoxName" style="width: 300px">
+        <textarea id="editBoxText" style="width: 400px; height: 300px; font-family: courier" wrap="off"></textarea>
+        <input type="text" id="editBoxLog" style="width: 400px" placeholder="log message...">
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        <button class="btn btn-primary" id="btnSaveChanges">Save changes</button>
+      </div>
+    </div>-->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="">HostDB</a>
+          <div class="nav-collapse collapse">
+            <div id="frmSignOut" class="navbar-form pull-right" style="display:none">
+            <p class="navbar-text">
+              Logged in as <a href="#" class="navbar-link">username</a>
+              <button id="btnSignOut" class="btn">Sign Out</button>
+            </p>
+            </div>
+            <div id="frmSignIn" class="navbar-form pull-right" style="display:none">
+              <input id="txtUsername" class="span2" type="text" placeholder="Username">
+              <input id="txtPassword" class="span2" type="password" placeholder="Password">
+              <button id="btnSignIn" class="btn">Sign in</button>
+            </div>
+            <ul class="nav" id="navNamespaces">
+              <li id="navhosts"><a href="/hosts">Hosts</a></li>
+              <li id="navtags"><a href="/tags">Tags</a></li>
+              <li id="navspares"><a href="/spares">Spares</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+    <div class="container-fluid">
+      <div class="row-fluid">
+        <div class="span3">
+          <input type="text" id="txtSearch" class="search-query" placeholder="Search...">
+          <div class="well sidebar-nav">
+            <ul id="keys-list" class="nav nav-list">
+            </ul>
+          </div>
+          <input type="text" id="txtNewKey">
+          <button id="btnAdd" class="btn RW">Add</button>
+        </div>
+        <div class="span9">
+          <div class="hero-unit">
+            <ul class="nav nav-tabs">
+              <li id="liConfig" class="active"><a href="#config" data-toggle="tab">Config</a></li>
+              <li id="liMembers" style="display:none"><a href="#members" data-toggle="tab">Members</a></li>
+              <li id="liDerivedConfigTags" style="display:none"><a href="#derivedTags" data-toggle="tab">Derived(tags)</a></li>
+              <li id="liDerivedConfigSpares" style="display:none"><a href="#derivedSpares" data-toggle="tab">Derived(spares)</a></li>
+            </ul>
+            <div class="tab-content">
+              <div class="tab-pane fade" id="config">
+                <textarea id="txtConfig" style="width: 700px; height: 400px; font-family: courier" wrap="off" readonly></textarea><br>
+                <button id="btnEdit" class="btn RW">Edit</button>
+                <button id="btnDelete" class="btn RW">Delete</button>
+              </div>
+              <div class="tab-pane fade" id="members">
+                <div id="lstMembers" style="height: 500px; overflow: scroll"></div>
+                <div><button class="btn RW" id="btnEdit">Edit</button></div>
+              </div>
+              <div class="tab-pane fade" id="derivedTags">
+                <textarea id="txtConfig" style="width: 700px; height: 300px; font-family: courier" wrap="off" readonly></textarea>
+                <div id="lstTags"></div><br>
+              </div>
+              <div class="tab-pane fade" id="derivedSpares">
+                <textarea id="txtConfig" style="width: 700px; height: 300px; font-family: courier" wrap="off" readonly></textarea>
+                <div id="lstSpares"></div><br>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <hr>
+      <footer>
+        <p>Contact Dev - hostdb@flipkart.com</p>
+      </footer>
+
+    </div><!--/.fluid-container-->
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="/bootstrap/js/jquery-2.0.3.min.js"></script>
+    <script src="/bootstrap/js/bootstrap-transition.js"></script>
+    <!--<script src="/bootstrap/js/bootstrap-alert.js"></script>-->
+    <script src="/bootstrap/js/bootstrap-modal.js"></script>
+    <!--<script src="/bootstrap/js/bootstrap-dropdown.js"></script>-->
+    <!--<script src="/bootstrap/js/bootstrap-scrollspy.js"></script>-->
+    <script src="/bootstrap/js/bootstrap-tab.js"></script>
+    <!--<script src="/bootstrap/js/bootstrap-tooltip.js"></script>-->
+    <!--<script src="/bootstrap/js/bootstrap-popover.js"></script>-->
+    <script src="/bootstrap/js/bootstrap-button.js"></script>
+    <!--<script src="/bootstrap/js/bootstrap-collapse.js"></script>
+    <script src="/bootstrap/js/bootstrap-carousel.js"></script>-->
+    <script src="/bootstrap/js/bootstrap-typeahead.js"></script>
+    <script src="/assets/js/yaml.js"></script>
+    <script src="/assets/js/jquery.cookie.js"></script>
+    <!--<script src="/assets/js/URI.js"></script>-->
+
+    <script type="text/javascript">
+        var inHistory = false;
+        var oldNamespace = '';
+        var oldKey = '';
+        //var hostdbApi = '/cgi-bin/hostdb.fcgi';
+        var hostdbApi = '/v1/';
+        var username = '';
+        var keys = new Array();
+        var prevQuery = '';
+        var currentKeys = new Array();
+        var refreshKeysList = true;
+        var curTab = '';
+        var hostTemplate = '\
+---\n\
+Hardware:\n\
+  CPU Speed: \n\
+  CPU Type: \n\
+  Cores/CPU: \n\
+  Memory: \n\
+  Model: \n\
+  NIC Ports: \n\
+  No. of CPUs: \n\
+  SMPS: \n\
+  Storage: \n\
+  Storage Type: \n\
+Network:\n\
+  DRAC IP: \n\
+  FQDN: \n\
+  IP: \n\
+  Nic1: \n\
+  Nic2: \n\
+  Switch Primary: \n\
+  Switch Primary IP: \n\
+  Switch Secondary: \n\
+  Switch Secondary IP: \n\
+  cname: \n\
+  eth0 MAC ID: \n\
+Physical Location:\n\
+  Rack Number: \n\
+  Service Tag: \n\
+  U Number: \n\
+Purpose:\n\
+  FK Tag: \n\
+  Purpose: \n\
+Status: \n\
+'
+        var curContent;
+        var path;
+        var spare_pool_admins = new Array();
+        $(document).ready(function() {
+            $("#navspares").hide();
+            if ($.cookie('HostDB') != null) {
+                getContent(hostdbApi + 'auth/session',
+                    function(output) {
+                        username = output;
+                        $("#frmSignOut").find("p").find("a").html(username)
+                        $("#frmSignOut").show();
+                        if (spare_pool_admins.indexOf(username) < 0) {
+                            if (path.namespace == 'spares') {
+                              path.namespace = 'hosts';
+                              history.pushState('', '', '/' + path.namespace);
+                            }
+                        }
+                        else {
+                            $("#navspares").show();
+                        }
+                    },
+                    function(error) {
+                        $.removeCookie('HostDB');
+                        $("#frmSignIn").show();
+                        $(".btn.RW").attr("disabled", "disabled");
+                    }
+                );
+            }
+            else {
+                $("#frmSignIn").show();
+                $(".btn.RW").attr("disabled", "disabled");
+            }
+            
+            inHistory = true;
+            path = parsePath()
+            if (! path.namespace) {
+                path.namespace = 'hosts';
+                history.pushState('', '', '/' + path.namespace);
+            }
+            loadContentFromHref();
+        });
+        
+        $("#txtPassword").keyup(function(ev) {
+            if (ev.which === 13) {  // if key is 13(enter)
+                $("#btnSignIn").focus();
+                $("#btnSignIn").click();
+            }
+        });
+        $("#btnSignIn").click(function() {
+            var data = 'username=' + escape($("#txtUsername").val()) + '&password=' + escape($("#txtPassword").val());
+            postContent(hostdbApi + 'auth/session', data,
+                function(output) {
+                    username = $("#txtUsername").val();
+                    $("#frmSignOut").find("p").find("a").html(username)
+                    $("#frmSignIn").hide();
+                    $("#frmSignOut").show();
+                    $(".btn.RW").removeAttr("disabled");
+                    if (spare_pool_admins.indexOf(username) >= 0) {
+                        $("#navspares").show();
+                    }
+                    else {
+                        $("#navspares").hide();
+                    }
+                },
+                function(error) {
+                    alert(error);
+                }
+            );
+        });
+        $("#btnSignOut").click(function() {
+            var confirmed = confirm("End your session?");
+            if (confirmed) {
+                $.removeCookie('HostDB', { path: '/', domain: 'domain.com', secure: 1 });
+                username = '';
+                $("#frmSignOut").hide();
+                $("#frmSignIn").show();
+                $(".btn.RW").attr("disabled", "disabled");
+                $("#navspares").hide();
+            }
+        })
+        $("#liConfig").click(function(event) {
+            path = parsePath();
+            $("#config").children("#txtConfig").val('');
+            var query = path.namespace + '/' + path.key;
+            if (!inHistory) {
+                history.pushState('', '', '/' + path.namespace + '/' + path.key);
+            }
+            
+            getContent(hostdbApi + query,
+                function(output) {
+                    $("#config").children("#txtConfig").val(output);
+                    $("#keys-list a").each(function() {
+                        this.href = location.origin + '/' + path.namespace + '/' + this.text;
+                    });
+                }
+            );
+            inHistory = false;
+            oldKey = path.key;
+            oldNamespace = path.namespace;
+        });
+        
+        $("#liMembers").click(function(event) {
+            path = parsePath();
+            $("#members").children("#lstMembers").html('');
+            var query = path.namespace + '/' + path.key + '/members';
+            if (!inHistory) {
+              history.pushState('', '', '/' + path.namespace + '/' + path.key + '/members');
+            }
+            getContent(hostdbApi + query,
+                function(output) {
+                    var list = output.split("\n");
+                    var html = '';
+                    for (i=0, len=list.length; i < list.length; i++) {
+                        html = html + '<li><a href="/hosts/' + list[i] + '">' + list[i] + '</a></li>';
+                    }
+                    $("#members").children("#lstMembers").html(html);
+                    $("#keys-list a").each(function() {
+                        this.href = location.origin + '/' + path.namespace + '/' + this.text + '/members';
+                    });
+                },
+                function(error) {
+                    alert(error);
+                }
+            );
+            inHistory = false;
+            oldKey = path.key;
+            oldNamespace = path.namespace;
+        });
+        
+        $("#liDerivedConfigTags").click(function(event) {
+            path = parsePath();
+            $("#derivedTags").children("#lstTags").html('');
+            $("#derivedTags").children("#txtConfig").val('');
+            query = 'hosts/' + path.key + '?meta=derived&from=tags';
+            if (!inHistory) {
+              history.pushState('', '', '/' + path.namespace + '/' + path.key + '?meta=derived&from=tags');
+            }
+            getContent(hostdbApi + query,
+                function(output) {
+                    $("#derivedTags").children("#txtConfig").val(output);
+                    var parents = Object.keys(YAML.eval(output));
+                    var html = '';
+                    for (i=0, len=parents.length; i < parents.length; i++) {
+                        html = html + '<a href="/tags/' + parents[i] + '" style="padding: 0 10px">' + parents[i] + '</a>';
+                    }
+                    $("#derivedTags").children("#lstTags").html(html);
+                    if ($("#keys-list a")[0].href.search(/from=tags$/) < 0) {
+                        $("#keys-list a").each(function() {
+                            this.href = location.origin + '/' + path.namespace + '/' + this.text + '?meta=derived&from=tags';
+                        });
+                    }
+                },
+                function(error) {
+                    alert(error);
+                }
+            );
+            inHistory = false;
+            oldKey = path.key;
+            oldNamespace = path.namespace;
+        });
+        
+        $("#liDerivedConfigSpares").click(function(event) {
+            path = parsePath();
+            $("#derivedSpares").children("#lstSpares").html('');
+            $("#derivedSpates").children("#txtConfig").val('');
+            query = 'hosts/' + path.key + '?meta=derived&from=spares';
+            if (!inHistory) {
+              history.pushState('', '', '/' + path.namespace + '/' + path.key + '?meta=derived&from=spares');
+            }
+            getContent(hostdbApi + query,
+                function(output) {
+                    $("#derivedSpares").children("#txtConfig").val(output);
+                    var parents = Object.keys(YAML.eval(output));
+                    var html = '';
+                    for (i=0, len=parents.length; i < parents.length; i++) {
+                        html = html + '<a href="/spares/' + parents[i] + '" style="padding: 0 10px">' + parents[i] + '</a>';
+                    }
+                    $("#derivedSpares").children("#lstSpares").html(html);
+                    if ($("#keys-list a")[0].href.search(/from=spares$/) < 0) {
+                        $("#keys-list a").each(function() {
+                            this.href = location.origin + '/' + path.namespace + '/' + this.text + '?meta=derived&from=spares';
+                        });
+                    }
+                },
+                function(error) {
+                    alert(error);
+                }
+            );
+            inHistory = false;
+            oldKey = path.key;
+            oldNamespace = path.namespace;
+        });
+        
+        $("#keys-list").click(function(event) {
+            event.preventDefault();
+            if (!inHistory) {
+                history.pushState('', '', $(event.target).attr('href'));
+                inHistory = true;
+            }
+            $("#keys-list .active").removeClass("active");
+            $(event.target).parent().addClass("active");
+            showTabPane();
+        });
+        
+        //$("#keys-list").keydown(function(event){
+        //    event.preventDefault();
+        //    var item = $("#keys-list .active");
+        //    if (event.which === 40) {
+        //        if (!inHistory) {
+        //            history.pushState('', '', item.next().attr('href'));
+        //            inHistory = true;
+        //        }
+        //        item.removeClass("active");
+        //        item.next().addClass("active");
+        //        showTabPane();
+        //    }
+        //    
+        //    if (event.which === 38) {
+        //        if (!inHistory) {
+        //            history.pushState('', '', item.prev().attr('href'));
+        //            inHistory = true;
+        //        }
+        //        item.removeClass("active");
+        //        item.prev().addClass("active");
+        //        showTabPane();
+        //    }
+        //});
+        
+        $(document).on("click", "#btnEdit", function(event) {
+            path = parsePath();
+            if ($.cookie('HostDB') == null) {
+                alert("Please sign in.");
+                return;
+            }
+            var query;
+            var tab = $('.nav-tabs .active a').attr("href");
+            if (tab == '#members') {
+                query = 'auth/can_modify?user=' + username + '&id=' + path.namespace + '/' + path.key + '/members';
+                $("#editBoxName").attr("readonly", "readonly");
+            }
+            else if (tab == '#config') {
+                query = 'auth/can_modify?user=' + username + '&id=' + path.namespace + '/' + path.key;
+                $("#editBoxName").removeAttr("readonly");
+            }
+            getContent(hostdbApi + query,
+                function(output) {
+                    if (output != '1') {
+                        alert('Permission denied.');
+                        return;
+                    }
+                    if (tab == '#members') {
+                        query = path.namespace + '/' + path.key + '/members?raw=true';
+                    }
+                    else if (tab == '#config') {
+                        query = path.namespace + '/' + path.key;
+                    }
+                    getContent(hostdbApi + query,
+                        function(output) {
+                            $("#editBoxName").val(path.key);
+                            if (tab == '#members') {
+                                $("#editBoxName").attr("readonly", "readonly");
+                                $("#editBoxLabel").text('Edit members of ' + path.key);
+                                query = path.namespace + '/' + path.key + '/members?meta=revisions';
+                            }
+                            else if (tab == '#config') {
+                                    $("#editBoxName").removeAttr("readonly");
+                                    $("#editBoxLabel").text('Edit config of ' + path.key);
+                            //        $("#revList").parent().show();
+                                    query = path.namespace + '/' + path.key + '?meta=revisions';
+                               }
+			    getContent(hostdbApi + query,function(output){
+			        var arr=output.split("\n");
+			        var i=1;
+			        var $el = $("#revList");
+			        $el.empty(); // remove old options
+			        for(var index in arr) {
+				   var array=arr[index].split(" ");
+			           $el.append($("<option></option>")
+			           .attr("value", array[0]).text(arr[index]));
+			        }
+			    },
+                            function(error) {
+			      alert(error);
+			      return;
+                            });
+                            $("#editBoxText").val(output);
+                            curContent = output;
+                            $("#editBoxLog").val('');
+                            $("#btnSaveChanges").attr("disabled","disabled");
+                            curTab = $('.nav-tabs .active a').attr("href");
+                            $('#editBox').modal('show');
+                        },
+                        function(error) {
+                            alert(error);
+                        }
+                    );
+                },
+                function(error) {
+                    alert('Error while checking permissions. ' + error);
+                    return;
+                }
+            );
+        });
+        
+        $(document).on("click", "#btnSaveChanges", function(event) {
+            if ($("#editBoxText").val() != curContent) {
+                var data;
+                var id;
+                var tab = $('.nav-tabs .active a').attr("href");
+                if (tab == '#config') {
+                    id = path.namespace + '/' + path.key;
+                }
+                else if (tab == '#members') {
+                    id = path.namespace + '/' + path.key + '/members';
+                }
+                else {
+                    return;
+                }
+                data = 'value=' + escape($("#editBoxText").val()) + '&log=' + escape($("#editBoxLog").val()) ;
+                putContent(hostdbApi + id, data,
+                    function(output) {
+                        $('#editBox').modal('hide');
+                        $(".nav-tabs").children(".active").click();
+                    },
+                    function(error) {
+                        alert(error);
+                        $('#editBox').modal('show');
+                    }
+                );
+            }
+            if ($("#editBoxName").val().trim() != path.key) {
+                var id = path.namespace + '/' + path.key;
+                var data = 'newname=' + $("#editBoxName").val().trim() + '&log=' + escape($("#editBoxLog").val()) ;
+                postContent(hostdbApi + id, data,
+                    function(output) {
+                        $('#editBox').modal('hide');
+                        history.pushState('', '', '/' + path.namespace + '/' + $("#editBoxName").val().trim() + location.hash);
+                        refreshKeysList = true;
+                        loadContentFromHref();
+                    },
+                    function(error) {
+                        alert(error);
+                        $('#editBox').modal('show');
+                    }
+                );
+            }
+            else {
+                $('#editBox').modal('hide');
+            }
+        });
+        $('#revList').change(function() {
+            var tab = $('.nav-tabs .active a').attr("href");
+            var commitid = $(this).val();
+            var id = path.namespace + '/' + path.key;
+            if ( tab == '#members' ) {
+                id += '/members';
+            }
+            query = '?revision=' + commitid;
+            if ( tab == '#members' ) {
+                query += '&raw=true';
+            }
+            getContent(hostdbApi + id + query,function(output){
+                                  $("#editBoxText").val(output);
+                                 },function(error) {
+                    alert(error);
+                    return;
+                });
+        });
+        $("#editBoxLog").keyup(function() {
+            if ($("#editBoxLog").val() == '') {
+                $("#btnSaveChanges").attr("disabled","disabled");
+            }
+            else {
+                $("#btnSaveChanges").removeAttr("disabled");
+            }
+        });
+        $("#txtNewKey").keyup(function(ev) {
+            if (! $('#btnAdd').is(':disabled') && ev.which === 13) {  // if keys is 13(enter)
+                $("#btnAdd").focus();
+                $("#btnAdd").click();
+            }
+        }); 
+        $("#btnAdd").click(function(event) {
+            var log = prompt("Please enter a commit message.", "Empty message");
+            if (log == null) {
+                return;
+            }
+            var newKey = $("#txtNewKey").val();
+            if (newKey.match("^ *$")) {
+                return;
+            }
+            for (i=0, len=keys.length; i<len; i++) {
+                if (newKey == keys[i]) {
+                    alert("Duplicate key");
+                    return;
+                }
+            }
+            var id = path.namespace + '/' + newKey;
+            
+            if (path.namespace == 'hosts') {
+                data = 'value=' + escape(hostTemplate) + '&log=' + log;
+            }
+            else {
+                data = 'value=&log=' + log;
+            }
+            putContent(hostdbApi + id, data,
+              function(output) {
+                  history.pushState('', '', '/' + path.namespace + '/' + newKey + location.hash);
+                  refreshKeysList = true;
+                  loadContentFromHref();
+              },
+              function(error) {
+                  alert(error);
+              }
+            );
+        });
+        $("#btnDelete").click(function(event) {
+            var confirmed = confirm("Are you sure you want to delete key:" + path.key + " in namespace:" + path.namespace + "?");
+            if (!confirmed) {
+                return;
+            }
+            var id = path.namespace + '/' + path.key;
+            var data = '?log=Deleting ' + id;
+            deleteContent(hostdbApi + id + data,
+                function(output) {
+                    var newKey = (path.key == currentKeys[0]) ? currentKeys[1] : currentKeys[0];
+                    history.pushState('', '', '/' + path.namespace + '/' + newKey + location.hash);
+                    refreshKeysList = true;
+                    loadContentFromHref();
+                },
+                function(error) {
+                    alert(error);
+                }
+            );
+        });
+        
+        $("#txtSearch").keyup(function() {
+            var searchQuery = $("#txtSearch").val();
+            var newKeys = new Array();
+            if (searchQuery.indexOf(prevQuery) != 0) {
+                currentKeys = keys;
+            }
+            $("#keys-list").html('');
+            var out = "";
+            var re = new RegExp(searchQuery, 'i');
+            for (i = 0, len = currentKeys.length; i < len; i++) {
+                if (currentKeys[i].match(re)) {
+                    out = out + '<li><a href="' + location.origin + '/' + path.namespace + '/' + currentKeys[i] + location.hash + '">' + currentKeys[i] + '</a></li>';
+                    newKeys.push(currentKeys[i]);
+                }
+            }
+            $("#keys-list").html(out);
+            $("#keys-list").children().filter(function(index) { return $(this).text() == oldKey; }).addClass("active");
+            currentKeys = newKeys;
+            prevQuery = searchQuery;
+        });
+        
+        $(document).on("click", ".tab-content a", function(event) {
+            event.preventDefault();
+            if (!inHistory) {
+                history.pushState('', '', $(event.target).attr('href'));
+                inHistory = true;
+            }
+            loadContentFromHref();
+        });
+        
+        // THIS EVENT MAKES SURE THAT THE BACK/FORWARD BUTTONS WORK AS WELL
+        window.onpopstate = function(event) {
+            event.preventDefault();
+            inHistory = true;
+            loadContentFromHref();
+        };
+
+    </script>
+
+    <script type="text/javascript">
+    
+        function loadKeys(namespace, activeKey) {
+            var getKeysUrl = hostdbApi + namespace;
+            var exactMatch = false;
+            getContent(getKeysUrl,
+                function(output) {
+                    keys = output.split("\n");
+                    currentKeys = new Array();
+                    var out = "";
+                    var re = new RegExp(activeKey, 'i');
+                    for (var i = 0, len = keys.length; i < len; i++) {
+                        if (keys[i].match(re)) {
+                            currentKeys.push(keys[i]);
+                        }
+                        if (keys[i] == activeKey) {
+                            exactMatch = true;
+                        }
+                    }
+                    if (exactMatch) {
+                        currentKeys = keys;
+                        $("#txtSearch").val('');
+                        prevQuery = '';
+                    }
+                    else {
+                        $("#txtSearch").val(activeKey);
+                        prevQuery = activeKey;
+                    }
+                    for (var i = 0, len = currentKeys.length; i < len; i++) {
+                        out = out + '<li><a href="' + location.origin + '/' + path.namespace + '/' + currentKeys[i] + location.search + '">' + currentKeys[i] + '</a></li>';
+                    }
+                    $("#keys-list").html(out);
+                    if (exactMatch) {
+                        $("#keys-list").children().filter(function(index) { return $(this).text() == activeKey; }).addClass("active");
+                        $(".sidebar-nav").scrollTop($("#keys-list .active").offset().top - $("#keys-list li:first").offset().top);
+                    }
+                    oldNamespace = namespace;
+                    refreshKeysList = false;
+                    if (exactMatch) {
+                        inHistory = true;
+                        loadContentFromHref();  // load tab pane
+                    }
+                },
+                function(error) {
+                    alert(error);
+                }
+            );
+        }
+        
+        function loadContentFromHref() {
+            path = parsePath();
+            if (path.namespace == 'hosts') {
+                $("#liDerivedConfigTags").show();
+                $("#liMembers").hide();
+            }
+            else if (path.namespace == 'tags') {
+                $("#liMembers").show();
+                $("#liDerivedConfigTags").hide();
+            }
+            else if (path.namespace == 'spares') {
+                $("#liMembers").show();
+                $("#liDerivedConfigSpares").hide();
+            }
+            if (oldNamespace != path.namespace || refreshKeysList) {
+                loadKeys(path.namespace, path.key);
+                $("#navNamespaces").children(".active").removeClass("active");
+                $("#navNamespaces").children("#nav" + path.namespace).addClass("active");
+            }
+            else {
+                if (oldKey != path.key) {
+                    $("#keys-list .active").removeClass("active");
+                    $("#keys-list").children().filter(function(index) { return $(this).text() == path.key; } ).addClass("active");
+                    $(".sidebar-nav").scrollTop($("#keys-list .active").offset().top - $("#keys-list li:first").offset().top);
+                }
+                showTabPane();
+            }
+            inHistory = false;
+        }
+        
+        function getContent(URL, handleSuccess, handleError) {
+            $.ajax({
+                url: URL,
+                type: 'GET',
+                dataType: 'text',
+                success: function(data) {
+                    handleSuccess(data);
+                },
+                error: function(temp1, temp2, errorThrown) {
+                    handleError(errorThrown);
+                }
+            });
+        }
+        function postContent(url, data, handleSuccess, handleError) {
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: data,
+                dataType: 'text',
+                success: function(output) {
+                    handleSuccess(output);
+                },
+                error: function(temp1, temp2, error) {
+                    handleError(error);
+                }
+            });
+        }
+        function putContent(url, data, handleSuccess, handleError) {
+            $.ajax({
+                url: url,
+                type: 'PUT',
+                data: data,
+                dataType: 'text',
+                success: function(output) {
+                    handleSuccess(output);
+                },
+                error: function(temp1, temp2, error) {
+                    handleError(error);
+                }
+            });
+        }
+        function deleteContent(url, handleSuccess, handleError) {
+            $.ajax({
+                url: url,
+                type: 'DELETE',
+                dataType: 'text',
+                success: function(output) {
+                    handleSuccess(output);
+                },
+                error: function(temp1, temp2, error) {
+                    handleError(error);
+                }
+            });
+        }
+        
+        function parsePath() {
+            var parts = location.pathname.split('/');
+            return {
+                namespace: parts[1],
+                key: parts[2]
+            }
+        }
+        function showTabPane() {
+            $(".nav-tabs").children(".active").removeClass("active");
+            if (location.pathname.search(/members$/) > 0) {
+                $("#liMembers").click();
+                $('.nav-tabs #liMembers a').tab('show');
+            }
+            else if (location.search == '?meta=derived&from=tags' && path.namespace == 'hosts') {
+                $("#liDerivedConfigTags").click();
+                $('.nav-tabs #liDerivedConfigTags a').tab('show');
+            }
+            else if (location.search == '?meta=derived&from=spares' && path.namespace == 'hosts') {
+                $("#liDerivedConfigSpares").click();
+                $('.nav-tabs #liDerivedConfigSpares a').tab('show');
+            }
+            else {
+                $("#liConfig").click();
+                $('.nav-tabs #liConfig a').tab('show');
+            }
+        }
+    </script>
+    </body>
+</html>
+
+

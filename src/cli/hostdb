@@ -1,0 +1,372 @@
+#!/usr/bin/perl
+
+use strict;
+use HostDB::Client;
+use Getopt::Long;
+use Term::ReadKey;
+use File::Compare;
+use File::Temp qw( tempfile );
+use YAML::Syck;
+use Text::Diff;
+use Data::Dumper;
+
+my %sub_map = (
+    'get'       => \&get,
+    'edit'      => \&edit,
+    'add'       => \&add,
+    'delete'    => \&delete,
+    'rename'    => \&rename,
+    'revisions' => \&revisions,
+    'rollback'  => \&rollback,
+    'parents'   => \&parents,
+    'derived'   => \&derived,
+);
+
+my $action = shift;
+defined $action || usage();
+$action !~ /^-/ || usage();
+exists $sub_map{$action} || usage();
+
+my $hdb = HostDB::Client->new();
+my $SESSION = "$ENV{HOME}/.hostdb_session";
+
+$sub_map{$action}->();
+
+1;
+
+sub get {
+    my ($revision, $raw);
+    GetOptions(
+        'rev|r=s'    => \$revision,
+        'original|o' => \$raw,
+    );
+    my $id = shift @ARGV;
+    $id or usage('get');
+    print $hdb->get($id, $revision, $raw) . "\n";
+}
+
+sub revisions {
+    my $limit;
+    GetOptions('limit|l=i' => \$limit);
+    my $id = shift @ARGV;
+    $id or usage('revisions');
+    print $hdb->revisions($id, $limit) . "\n";
+}
+
+sub parents {
+    my $namespace = 'tags';
+    GetOptions('namespace|n=s' => \$namespace);
+    my $host = shift @ARGV;
+    ($namespace && $host) or usage('parents');
+    $host =~ s/^hosts\///;
+    print $hdb->parents($host, $namespace) . "\n";
+}
+
+sub derived {
+    my $namespace = 'tags';
+    GetOptions('namespace|n=s' => \$namespace);
+    my $host = shift @ARGV;
+    ($namespace && $host) or usage('parents');
+    $host =~ s/^hosts\///;
+    print $hdb->derived($host, $namespace) . "\n";
+}
+
+sub rollback {
+    my ($log, $revision, $force);
+    GetOptions(
+        'rev|r=s' => \$revision,
+        'log|m=s' => \$log,
+        'yes|y'   => \$force,
+    );
+    ($revision) or usage('rollback');
+    auth() or die "Auth failed";
+    my $id = shift @ARGV;
+    my $old_val = $hdb->get($id);
+    my $new_val = $hdb->get($id, $revision);
+    print diff(\$old_val, \$new_val, { STYLE => "OldStyle" });
+    _yn_prompt("Rollback $id?", $force) or die "Aborted.";
+    $log = _log_prompt() if (! $log);
+    $hdb->set($id, $new_val, $log);
+}
+
+sub delete {
+    my ($log, $force);
+    GetOptions(
+        'log|m=s' => \$log,
+        'yes|y'   => \$force,
+    );
+    my $id = shift @ARGV;
+    $id or usage('delete');
+    auth() or die "Auth failed";
+    _yn_prompt("Delete $id?", $force) or die "Aborted.";
+    $log = _log_prompt() if (! $log);
+    $hdb->delete($id, $log);
+}
+
+sub rename {
+    my ($log, $name, $force);
+    GetOptions(
+        'log|m=s'  => \$log,
+        'name|n=s' => \$name,
+        'yes|y'    => \$force,
+    );
+    my $id = shift @ARGV;
+    ($name && $id) or usage('rename');
+    auth() or die "Auth failed";
+    my @newid = split '/', $id;
+    pop @newid;
+    push @newid, $name;
+    _yn_prompt("Rename $id to " . join('/', @newid) . "?", $force) or die "Aborted.";
+    $log = _log_prompt() if (! $log);
+    $hdb->rename($id, $name, $log);
+}
+
+sub add {
+    my ($log, $source, $force);
+    GetOptions(
+        'log|m=s'  => \$log,
+        'file|f=s' => \$source,
+        'yes|y'    => \$force,
+    );
+    my $id = shift @ARGV;
+    $id or usage('add');
+    eval { $hdb->get($id) };
+    $@ or die "Object already exists";
+    auth() or die "Auth failed";
+    my $value = '';
+    my $data;
+    if ($source) {
+        (-f $source && -r $source ) or die "Source file unreadable";
+        eval { $data = LoadFile($source) };
+        if ($@) {
+            _yn_prompt("$@\nYAML parsing failed on source file. Continue", $force) or die "Aborted";
+        }
+        open (my $fh, "<", $source) or die "Unable to open $source";
+        $value = do { local $/; <$fh> };
+        close $fh;
+    }
+    elsif ($id !~ /\/members\//) {
+        my ($tfh1, $tf1) = tempfile(UNLINK => 1, EXLOCK => 0);
+        close $tfh1;
+        system ("vim $tf1");
+        eval { $data = LoadFile($tf1) };
+        if ($@) {
+            _yn_prompt("$@\nYAML parsing failed. Continue", $force) or die "Aborted";
+        }
+        open (my $tfh1, "<", $tf1) or die "Unable to open $tf1";
+        $value = do { local $/; <$tfh1> };
+        close $tfh1;
+    }
+    $log = _log_prompt() if (! $log);
+    $hdb->set($id, $value, $log);
+}
+
+sub edit {
+    my ($log, $source, $force);
+    GetOptions(
+        'log|m=s'  => \$log,
+        'file|f=s' => \$source,
+        'yes|y'    => \$force,
+    );
+    my $id = shift @ARGV;
+    $id or usage('edit');
+    auth() or die "Auth failed";
+    my $value;
+    my $data;
+    if ($source) {
+        eval { $data = LoadFile($source) };
+        if ($@) {
+            _yn_prompt("$@\nYAML parsing failed on source file. Continue", $force) or die "Aborted";
+        }
+        open (my $fh, "<", $source) or die "Unable to open $source";
+        $value = do { local $/; <$fh> };
+        close $fh;
+    }
+    else {
+        my $resp = $hdb->get($id, undef, 1);
+        my ($tfh1, $tf1) = tempfile(UNLINK => 1);
+        my ($tfh2, $tf2) = tempfile(UNLINK => 1);
+        print $tfh1 $resp;
+        print $tfh2 $resp;
+        close $tfh1;
+        close $tfh2;
+        system ("vim $tf2");
+        if (compare($tf1, $tf2) == 0) {
+            print "No changes made.\n";
+            return 0;
+        }
+        eval { $data = LoadFile($tf2) };
+        if ($@) {
+            _yn_prompt("$@\nYAML parsing failed. Continue", $force) or die "Aborted";
+        }
+        open (my $tfh2, "<", $tf2) or die "Unable to open $tf2";
+        $value = do { local $/; <$tfh2> };
+        close $tfh2;
+    }
+    $log = _log_prompt() if (! $log);
+    $hdb->set($id, $value, $log);
+}
+
+sub _yn_prompt {
+    my ($msg, $force) = @_;
+    print "$msg?";
+    if ($force) {
+        print " y\n";
+        return 1;
+    }
+    my $response;
+    do {
+        print " (y/n) ";
+        $response = <STDIN>;
+        chomp $response;
+    } while($response !~ /^[yY]/ && $response !~ /^[nN]/);
+    return $response =~ /^[yY]/ ? 1 : 0;
+}
+
+sub _log_prompt {
+    my $log;
+    while (! $log) {
+        print "Enter commit message: ";
+        $log = <STDIN>;
+        chomp $log;
+    }
+    return $log;
+}
+
+sub auth {
+    $hdb->{die_on_error} = 0;
+    if (-e $SESSION) {
+        open (my $fh, "<", $SESSION) or die "Unable to read $SESSION";
+        my $session = <$fh>;
+        close $fh;
+        $hdb->authenticate($session) or _pwauth();
+    }
+    else {
+        _pwauth();
+    }
+    $hdb->{die_on_error} = 1;
+    return $hdb->{read_only} ? 0 : 1;
+}
+
+sub _pwauth {
+    my $max_tries = 3;
+    my $try = 0;
+    my ($user, $pass);
+    do {
+        $try++;
+        print "LDAP Username: ";
+        $user = <STDIN>;
+        chomp $user;
+        print "Password: ";
+        ReadMode 'noecho';
+        $pass = ReadLine 0;
+        chomp $pass;
+        ReadMode 'normal';
+        print "\n";
+        $hdb->authenticate($user, $pass);
+    } while($hdb->{read_only} && $try < $max_tries);
+    $hdb->{read_only} && return 0;
+    open my $fh, ">", $SESSION or die "Unable to write to $SESSION";
+    print $fh $hdb->{session};
+    close $fh;
+    return 1;
+}
+
+sub usage {
+    my $action = shift;
+    my %synopsis = (
+        'get'       => '        get       [--rev|r=<revision_id>] [--original|o] <id>',
+        'revisions' => '        revisions [--limit|l=<count>] <id>',
+        'parents'   => '        parents   --namespace|n=<namespace> [hosts/]<host>',
+        'derived'   => '        derived   --namespace|n=<namespace> [hosts/]<host>',
+        'rollback'  => '        rollback  --rev|r=<revision_id> <id>',
+        'delete'    => '        delete    <id>',
+        'rename'    => '        rename    --name|n=<new_name> <id>',
+        'add'       => '        add       [--file|f=<source_file>] <id>',
+        'edit'      => '        edit      [--file|f=<source_file>] <id>',
+    );
+    my %examples = (
+        'get' => 
+"        Get host config:
+            $0 get hosts/hostdb.ops.ch.flipkart.com
+        Get host IP:
+            $0 get hosts/hostdb.ops.ch.flipkart.com/Network/IP
+        Get tag config:
+            $0 get tags/nm-prod
+        Get tag members:
+            $0 get tags/nm-prod/members",
+
+        'parents' =>
+"        Get tags of host:
+            $0 parents -n tags hostdb.ops.ch.flipkart.com",
+
+        'derived' =>
+"        Get derived tag config:
+            $0 derived -n tags hostdb.ops.ch.flipkart.com",
+
+        'revisions' =>
+"        Get last 10 revisions of an object:
+            $0 revisions -l 10 hosts/hostdb.ops.ch.flipkart.com",
+
+        'rollback' =>
+"        Rollback to previous version:
+            $0 rollback -r a840d53 -m \"old is gold\" hosts/hostdb.ops.ch.flipkart.com",
+
+        'delete' =>
+"        Delete an object:
+            $0 delete -m \"not needed anymore\" hosts/hostdb.ops.ch.flipkart.com
+        Delete avoiding y/n prompt:
+            $0 delete -y -m \"not needed anymore\" hosts/hostdb.ops.ch.flipkart.com
+        Remove host from tag:
+            $0 delete -m \"untag host\" tags/nm-prod/members/new.nm.flipkart.com",
+
+        'rename' =>
+"        Rename an object:
+            $0 rename -n newname.ops.ch.flipkart.com hosts/hostdb.ops.ch.flipkart.com",
+
+        'add' =>
+"        Add an object:
+            $0 add hosts/hostdb.ops.ch.flipkart.com
+        Add host to tag:
+            $0 add -m \"adding new member\" tags/nm-prod/members/new.nm.flipkart.com
+        Add a tag to another tag's members:
+            $0 add -m \"inherited members\" tags/log_backup/members/\@log_flo_backup",
+
+        'edit' =>
+"        Edit an object:
+            $0 edit hosts/hostdb.ops.ch.flipkart.com/Network/Cname
+        Edit an object, read data from file:
+            $0 edit -f hostconfig.txt hosts/hostdb.ops.ch.flipkart.com
+        Edit members of a tag:
+            $0 edit tags/nm-prod/members",
+    );
+    print <<EOM;
+USAGE:
+	 $0 command command_opts hostdb_object_id
+
+COMMANDS
+EOM
+    if ($action && exists $synopsis{$action}) {
+        print "$synopsis{$action}\n";
+    }
+    else {
+        print "$synopsis{$_}\n" foreach (sort keys %sub_map);
+    }
+    print <<EOM;
+
+COMMON OPTIONS
+    All write operations take these optional arguments:
+        --log|m <log_message> : Avoid prompting for log message
+        --yes|y               : Avoid prompting for confirmations
+
+EXAMPLES
+EOM
+    if ($action && exists $examples{$action}) {
+        print "$examples{$action}\n";
+    }
+    else {
+        print "$examples{$_}\n" foreach (sort keys %sub_map);
+    }
+    print "\n";
+    exit 1;
+}

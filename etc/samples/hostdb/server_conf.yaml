@@ -1,0 +1,14 @@
+---
+READ_ONLY: off
+NAMESPACE_DIR: /var/lib/hostdb/namespaces
+GIT_PATH: /usr/bin/git
+GIT_LOCK_FILE: /var/lock/hostdb-git.lock
+GIT_LOCK_TIMEOUT: 10
+USER_EMAIL_DOMAIN: flipkart.com
+APP_USERS_CONF_FILE: /etc/hostdb/clients
+SESSION_CIPHER_KEY_FILE: /var/lib/hostdb/cipher_key
+LDAP_SERVER: "ldaps://ldap.domain.com"
+LDAP_PORT: 636
+LDAP_BASE: "ou=People,dc=domain,dc=com"
+LDAP_BASE_ALT: "ou=Interns,dc=domain,dc=com"
+LOGGER_CONF_FILE: /etc/hostdb/logger.conf

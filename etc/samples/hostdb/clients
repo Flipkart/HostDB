@@ -1,0 +1,8 @@
+---
+User1:
+  password: md5sum_of_passwd
+  allow: [1.1.1.1, 2.2.2.2, 3.3.3.3]
+User2:
+  password: md5sum_of_passwd
+  allow: [2.2.2.2, 3.3.3.3]
+
