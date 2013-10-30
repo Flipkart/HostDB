@@ -1,0 +1,11 @@
+#!/bin/bash
+pushd /etc/apache2/sites-enabled/
+ln -s ../sites-available/hostdb hostdb
+popd
+
+chown -R www-data:www-data /etc/hostdb /var/lib/hostdb /var/log/hostdb
+
+a2enmod fcgid
+/etc/init.d/apache2 reload
+
+exit 0

@@ -85,7 +85,7 @@ while (my $cgi = new CGI::Fast) {
             else {
                 my $cookie = $cgi->cookie(  -name => 'HostDB',
                                             -value => $session,
-                                            -domain => $conf->{USER_EMAIL_DOMAIN},
+                                            -domain => $conf->{COOKIE_DOMAIN},
                                             -expires => '+1d',
                                             -secure => 1,
                                          );

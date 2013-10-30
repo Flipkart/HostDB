@@ -1,0 +1,8 @@
+Package: fk-ops-hostdb-web
+Version: 1._VERSION_
+Section: flipkart/ops
+Priority: standard
+Depends:  apache2
+Architecture: all
+Maintainer: HostDB Dev <hostdb@flipkart.com>
+Description: HostDB WEB Interface (Twitter Bootstrap)

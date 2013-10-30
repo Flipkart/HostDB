@@ -312,7 +312,7 @@ Status: \n\
         $("#btnSignOut").click(function() {
             var confirmed = confirm("End your session?");
             if (confirmed) {
-                $.removeCookie('HostDB', { path: '/', domain: 'domain.com', secure: 1 });
+                $.removeCookie('HostDB', { path: '/', domain: 'your.cookie.domain.com', secure: 1 });
                 username = '';
                 $("#frmSignOut").hide();
                 $("#frmSignIn").show();

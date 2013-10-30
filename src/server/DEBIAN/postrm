@@ -1,0 +1,7 @@
+#!/bin/bash
+
+rm /etc/apache2/sites-enabled/hostdb
+
+/etc/init.d/apache2 reload
+
+exit 0
