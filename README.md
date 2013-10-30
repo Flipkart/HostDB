@@ -105,11 +105,24 @@ HostDB has been central to almost all software written by the devops at flipkart
 Setting up Server
 ------------------
 
-1. Copy Modules in src/site-perl to your module path (e.g., /usr/local/lib/site-perl)
-2. Copy src/cgi-bin/hostdb_rest.fcgi to your CGI direcotry (e.g., /usr/lib/cgi-bin/)
-3. Install config files in etc/samples to /etc and modify as needed
-4. Put a cipher key in /var/lib/hostdb/cipher_key - Used for creating session token
-5. Create a directory structure like this in /var/lib/hostdb/namespaces
+1. Go to src/server/
+2. Make config changes as necessary. You might need to modify these:
+
+<pre>
+
+DEBIAN/control                     - Package name and version
+etc/apache2/sites-available/hostdb - Apache config for API
+etc/hostdb/server_conf.yaml        - Main server config
+etc/hostdb/clients                 - App users config
+/etc/logrotate.d/hostdb            - Log rotation config
+
+</pre>
+
+3. Go back to src
+4. dpkg-deb -b server/ hostdb-server.deb
+5. dpkg -i hostdb-server.deb
+6. Put a cipher key in /var/lib/hostdb/cipher_key - Used for creating session token
+7. Create a directory structure like this in /var/lib/hostdb/namespaces
 
 <pre>
 
@@ -142,24 +155,43 @@ group1:
 </pre>
 
 6. All above files should be readable and writable for your apache user
-7. Enable fcgid (a2enmod fcgid) if not already enabled
 8. Restart apache
 9. Test - https://hostdb.yourdomain.com/v1/
 
 Setting up CLI tool
 -------------------
 
-1. Copy src/cli/hostdb to your bin directory
-2. Copy src/site-perl/HostDB/Client.pm to your perl module dir
-3. Copy etc/samples/hostdb/client_conf.yaml to /etc/hostdb/ and modify as needed
-4. Test - hostdb get hosts
+1. Go to src/client
+2. Make config changes as necessary. You might need to modify these:
+
+<pre>
+
+DEBIAN/control              - Package name and version
+etc/hostdb/client_conf.yaml - Mention server name in this
+
+</pre>
+
+3. Go back to src
+4. dpkg-deb -b client/ hostdb-client.deb
+5. dpkg -i hostdb-client.deb
+6. Test - /usr/local/bin/hostdb get hosts
 
 Setting up Web interface
 ------------------------
 
-1. Copy src/www/hostdb to your document root
-2. Modify src/www/hostdb/index.html to use correct cookie domain.
-   Current code only supports 'hosts', 'tags' and 'spares' namespaces. You will have to modify it accordingly.
-3. Configure hostdb apache config file as needed.
-4. Test - https://hostdb.yourdomain.com
+1. Go to src/webui/
+2. Make config changes as necessary. You might need to modify these:
+
+<pre>
+
+DEBIAN/control                     - Package name and version
+var/www/hostdb/index.html          - Change cookie domain name, modify to support your namespaces.
+etc/apache2/sites-available/hostdb - Apache config for WEB UI
+
+</pre>
+
+3. Go back to src
+4. dpkg-deb -b webui/ hostdb-webui.deb
+5. dpkg -i hostdb-webui.deb
+6. Test - https://hostdb.yourdomain.com
 
