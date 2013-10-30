@@ -82,7 +82,7 @@ $ hostdb get tags/nm-prod/members
 
 
 
-HostDB::Client PerI Module
+HostDB::Client Perl Module
 --------------------------
 
 We use Perl extensively and have a Perl Module that can be used by applications to interact with HostDB.  This module provides an object oriented interface over HostDB REST API.
@@ -97,11 +97,58 @@ HostDB has been central to almost all software written by the devops at flipkart
 
 
 
+Setting up Server
+------------------
 
+1. Copy Modules in src/site-perl to your module path (e.g., /usr/local/lib/site-perl)
+2. Copy src/cgi-bin/hostdb_rest.fcgi to your CGI direcotry (e.g., /usr/lib/cgi-bin/)
+3. Install config files in etc/samples to /etc and modify as needed
+4. Put a cipher key in /var/lib/hostdb/cipher_key - Used for creating session token
+5. Create a directory structure like this in /var/lib/hostdb/namespaces
+namespaces/
+|-- .git/            <initialize your git repo here>
+|-- hosts/           <’hosts’ namespace>
+|   |-- server1      <server config - YAML>
+|   |-- server2
+|   |-- .perms/
+|       |-- .global  <permissions(ACL) for ‘hosts’ namespace - YAML>
+|       |-- server2  <any ACL overrides for server2 - YAML>
+|-- tags/            <’tags’ namespace>
+    |-- tag1         <a tag or hostgroup config - YAML>
+    |-- tag2
+    |-- .members/
+    |   |-- tag1     <servers related to this tag - LIST>
+    |   |-- tag2
+    |-- .perms/
+        |-- .global  <ACL for ‘tags’ namespace - YAML>
+        |-- tag1     <any ACL override for tag1 - YAML>
 
+ACL file format:
+user1:
+  data: RO
+  members: RW
+group1:
+  members: RO
 
+6. All above files should be readable and writable for your apache user
+7. Enable fcgid (a2enmod fcgid) if not already enabled
+8. Restart apache
+9. Test - https://hostdb.yourdomain.com/v1/
 
+Setting up CLI tool
+-------------------
 
+1. Copy src/cli/hostdb to your bin directory
+2. Copy src/site-perl/HostDB/Client.pm to your perl module dir
+3. Copy etc/samples/hostdb/client_conf.yaml to /etc/hostdb/ and modify as needed
+4. Test - hostdb get hosts
 
+Setting up Web interface
+------------------------
 
+1. Copy src/www/hostdb to your document root
+2. Modify src/www/hostdb/index.html to use correct cookie domain.
+   Current code only supports 'hosts', 'tags' and 'spares' namespaces. You will have to modify it accordingly.
+3. Configure hostdb apache config file as needed.
+4. Test - https://hostdb.yourdomain.com
 
