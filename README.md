@@ -105,6 +105,7 @@ Setting up Server
 3. Install config files in etc/samples to /etc and modify as needed
 4. Put a cipher key in /var/lib/hostdb/cipher_key - Used for creating session token
 5. Create a directory structure like this in /var/lib/hostdb/namespaces
+```
 namespaces/
 |-- .git/            <initialize your git repo here>
 |-- hosts/           <’hosts’ namespace>
@@ -129,7 +130,7 @@ user1:
   members: RW
 group1:
   members: RO
-
+```
 6. All above files should be readable and writable for your apache user
 7. Enable fcgid (a2enmod fcgid) if not already enabled
 8. Restart apache
