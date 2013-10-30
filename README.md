@@ -40,19 +40,6 @@ HostDB provides a variety of user interfaces which can be used to interact with 
 * Some example use of HostDB
 
 
-HostDB: The Details
-===================
-
-Sometime in 2011, While flipkart was growing at an exponential scale and the entire operations team consisted of four people. We constantly struggled to allocate hardware and to make it production ready. Cloning machines using FAI, adding monitoring, adding dns entries etc were all routine pre-defined tasks which we felt could be automated very easily. We were tracking all of this with a shared google spreadsheet which was never kept up to date. Many a times existing machines were allocated twice, or more disastrously,  re-cloned by mistake. Surely, there was a better way.
-
-At the same time we were also thinking about a virtualization strategy, the open source options that were available at the time did not make any waves for us. So we decided to write our own, something we call Kloud. It was in these discussions that we thought about the life cycle of a machine and how instead of a centralised datastore keeping machine info, we really needed an application which could talk to other applications about the purpose of a host and it’s properties.
-
-We looked at all the available options and were disappointed. We decided to write something which was not just a source of truth about a host, but interacted with the production environment and lived with it. Because we wrote it to automate infrastructure problems, host state and host properties comes naturally to HostDB. We kept availability, scalability and reliability as the most important features of HostDB. As It turns out HostDB scales wonderfully for thousands of clients.
-
-Since we were such a small team, we were constantly involved in firefights and didn’t have any time to manage new services. We didn’t want to write something that depended on external services like zookeeper or mysql etc and decided to keep all the data in text files, “if it didn’t scale, we’ll change it later” was the policy.  We also wanted to future proof it and so stayed away from any complex file formats. The first prototype was written in Python by Abhishek. Both Krishnan and I refuse to read Python and Krishnan rewrote the whole thing in Perl one night. A year later another rewrite done by Jain Jonny incorporated the concept of multiple namespaces and made the code much more modular. We’ve been running this version in production for over a year now.
-
-
-
 HostDB: Key/Value Store with a difference
 =========================================
 
