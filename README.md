@@ -74,11 +74,11 @@ HostDB provides a command line tool that is extremely helpful in writing those s
 <pre>
 
 Add an object:
-$ hostdb add hosts/hostdb.ops.ch.flipkart.com
+$ hostdb add hosts/host1.yourdomain.com
 Add host to tag:
-$ hostdb add -m "adding new member" tags/nm-prod/members/new.nm.flipkart.com
+$ hostdb add -m "adding new member" tags/nm-prod/members/new.yourdomain.com
 Get host IP: 
-$ hostdb get hosts/hostdb.ops.ch.flipkart.com/Network/IP
+$ hostdb get hosts/host1.yourdomain.com/Network/IP
 Get tag members: 
 $ hostdb get tags/nm-prod/members
 
