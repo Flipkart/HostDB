@@ -70,7 +70,7 @@ sub _parse_resource_id {
     }
     if (@id_parts) {
         # Second part is always key
-        # hosts/host1.flipkart.com
+        # hosts/host1.yourdomain.com
         $parts{key} = shift @id_parts;
         $parts{_file} .= '/' . $parts{key};
         $parts{_content_type} = 'yaml';
