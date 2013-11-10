@@ -6,6 +6,8 @@ HostDB: a new tool to help manage data center inventory and write applications a
 
 HostDB is our attempt to solve the problem of finding hosts and their purposes in a large environment. HostDB acts as a Single source of truth about all Physical and Virtual servers and is used to define their purpose. It helps us group our servers through tags and all the software written by the operations team revolves around HostDB. HostDB acts as the centralized configuration store for all sorts of information.
 
+PS: Though the names are same, this project is not related to [this hostdb](https://code.google.com/p/hostdb/)
+
 Hosts
 ------
 
