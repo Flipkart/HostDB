@@ -158,7 +158,7 @@ sub add {
         close $tfh1;
     }
     $log = _log_prompt() if (! $log);
-    $hdb->set($id, $value, $log);
+    ($id =~ /\/members\//) ? $hdb->set($id, $log) : $hdb->set($id, $value, $log);
 }
 
 sub edit {
