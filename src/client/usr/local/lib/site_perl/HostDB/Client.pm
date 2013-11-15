@@ -38,6 +38,7 @@ use Data::Dumper;
 use LWP::UserAgent;
 #use HTTP::Cookies;
 use HTTP::Request::Common;
+use HTTP::Request;
 use YAML::Syck;
 
 #disabled ssl verification
@@ -178,7 +179,7 @@ sub _ua_request {
         $response = $ua->post($url, $postdata);
     }
     elsif ($method eq 'DELETE') {
-        $response = $ua->request(DELETE($url));
+        $response = $ua->request(HTTP::Request->new('DELETE', $url));
     }
     $self->{last_status} = {
         code    => $response->code,
