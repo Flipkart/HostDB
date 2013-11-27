@@ -29,11 +29,10 @@ my $success = HostDB::delete($id, \%options);
 package HostDB;
 
 use strict;
-use HostDB::Shared qw($logger);
+use HostDB::Shared qw( $logger );
 use HostDB::FileStore;
 use HostDB::ACL;
 use Data::Dumper;
-use Log::Log4perl;
 use YAML::Syck;
 
 my %parents_map_cache = ();
@@ -258,6 +257,19 @@ sub get {
             $output = Dump($out);
         }
     }
+    elsif (exists $options->{foreach}) {
+        my $s = HostDB::FileStore->new($options->{foreach});
+        my @keys = $s->get();
+        my $out = {};
+        foreach my $key (@keys) {
+            my $_id = $id;
+            $_id =~ s/\*/$key/;
+            $s = HostDB::FileStore->new($_id);
+            eval { $out->{$key} = Load(scalar $s->get()) };
+            $out->{$key} = undef if $@;
+        }
+        $output = Dump($out);
+    }
     elsif ($store->{meta_info} eq 'members' && $store->{record}) {
         $output = $store->get($options->{revision});
 #        $logger->debug(sub {Dumper \@members});
@@ -291,8 +303,6 @@ STRING $id - Id of HostDB Object
 
 HASHREF \%options - This should have these mandatory keys:
 
-In LIST context, also returns the last modified time of the object.
-
 =over 8
 
 user        => Committer name.
@@ -300,6 +310,8 @@ user        => Committer name.
 log         => Commit message.
 
 =back
+
+In LIST context, also returns the last modified time of the object.
 
 =cut
 
@@ -477,6 +489,8 @@ __END__
 5001   => 'Parsing error'
 
 5002   => 'Version control system error'
+
+5003   => 'Mandatory config variable not set'
 
 =item 5030   => 'Service unavailable'
 

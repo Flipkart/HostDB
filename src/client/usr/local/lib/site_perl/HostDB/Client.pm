@@ -18,8 +18,6 @@ my $output = $hdb->get($id[, $revision, $raw]);
 
 my $output = $hdb->revisions($id[, $limit]);
 
-my $output = $hdb->blame($id);
-
 my $success = $hdb->set($id, $value, $log);
 
 my $success = $hdb->set($id, $log); # to add a member
@@ -45,7 +43,7 @@ use YAML::Syck;
 $ENV{"PERL_LWP_SSL_VERIFY_HOSTNAME"} = 0;
 
 my $conf = LoadFile('/etc/hostdb/client_conf.yaml');
-my $server = $conf->{SERVER};
+my $server = $conf->{server};
 my $proto = 'https';
 my $version = 'v1';
 
@@ -260,16 +258,6 @@ sub revisions {
     my $response = $self->_ua_request('GET', $url);
     return $response->is_success ? $response->content : undef;
 }
-
-#=item I<blame($id)> - Gets git blame of a HostDB object.
-#
-#=cut
-#
-#sub blame {
-#    my ($self, $id) = @_;
-#    my $response = $self->_ua_request('GET', "$self->{api}/$id?meta=blame");
-#    return $response->is_success ? $response->content : undef;
-#}
 
 =item I<set($id, $value, $log)> - Sets value of a HostDB object.
 

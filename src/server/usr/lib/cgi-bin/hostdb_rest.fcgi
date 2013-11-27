@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use strict;
-use HostDB::Shared qw(&read_config $conf $logger);
+use HostDB::Shared qw(&load_conf &get_conf $logger);
 use HostDB;
 use HostDB::Session;
 use HostDB::ACL;
@@ -19,7 +19,7 @@ $SIG{HUP} = sub { $got_hup = 1 };
 
 while (my $cgi = new CGI::Fast) {
     if ($got_hup) {
-        read_config();
+        load_conf();
         $got_hup = 0;
     }
     my $st = Benchmark->new;
@@ -28,7 +28,7 @@ while (my $cgi = new CGI::Fast) {
     my $uri = $ENV{REQUEST_URI};
     my $qs = $ENV{QUERY_STRING};
     if ($method eq 'DELETE' || $method eq 'PUT' || $method eq 'POST') {
-        if ($conf->{READ_ONLY} ~~ ['1', 'on']) {
+        if (get_conf('server.read_only') ~~ ['1', 'on']) {
             print status_for_error("4031: HostDB is in read-only mode");
             next;
         }
@@ -85,7 +85,7 @@ while (my $cgi = new CGI::Fast) {
             else {
                 my $cookie = $cgi->cookie(  -name => 'HostDB',
                                             -value => $session,
-                                            -domain => $conf->{COOKIE_DOMAIN},
+                                            -domain => get_conf('users.human.cookie_domain'),
                                             -expires => '+1d',
                                             -secure => 1,
                                          );
@@ -101,7 +101,7 @@ while (my $cgi = new CGI::Fast) {
         next;
     }
     elsif ($id =~ /^auth\/can_modify/ && $method eq 'GET') {
-        if ($conf->{READ_ONLY} ~~ ['1', 'on']) {
+        if (get_conf('server.read_only') ~~ ['1', 'on']) {
             print status_for_error("4031: HostDB is in read-only mode");
             next;
         }

@@ -288,9 +288,9 @@ sub usage {
     my %examples = (
         'get' => 
 "        Get host config:
-            $0 get hosts/host1.yourdomain.com
+            $0 get hosts/hostdb.ops.ch.flipkart.com
         Get host IP:
-            $0 get hosts/host1.yourdomain.com/Network/IP
+            $0 get hosts/hostdb.ops.ch.flipkart.com/Network/IP
         Get tag config:
             $0 get tags/nm-prod
         Get tag members:
@@ -298,45 +298,45 @@ sub usage {
 
         'parents' =>
 "        Get tags of host:
-            $0 parents -n tags host1.yourdomain.com",
+            $0 parents -n tags hostdb.ops.ch.flipkart.com",
 
         'derived' =>
 "        Get derived tag config:
-            $0 derived -n tags host1.yourdomain.com",
+            $0 derived -n tags hostdb.ops.ch.flipkart.com",
 
         'revisions' =>
 "        Get last 10 revisions of an object:
-            $0 revisions -l 10 hosts/host1.yourdomain.com",
+            $0 revisions -l 10 hosts/hostdb.ops.ch.flipkart.com",
 
         'rollback' =>
 "        Rollback to previous version:
-            $0 rollback -r a840d53 -m \"old is gold\" hosts/host1.yourdomain.com",
+            $0 rollback -r a840d53 -m \"old is gold\" hosts/hostdb.ops.ch.flipkart.com",
 
         'delete' =>
 "        Delete an object:
-            $0 delete -m \"not needed anymore\" hosts/host1.yourdomain.com
+            $0 delete -m \"not needed anymore\" hosts/hostdb.ops.ch.flipkart.com
         Delete avoiding y/n prompt:
-            $0 delete -y -m \"not needed anymore\" hosts/host1.yourdomain.com
+            $0 delete -y -m \"not needed anymore\" hosts/hostdb.ops.ch.flipkart.com
         Remove host from tag:
-            $0 delete -m \"untag host\" tags/nm-prod/members/new.yourdomain.com",
+            $0 delete -m \"untag host\" tags/nm-prod/members/new.nm.flipkart.com",
 
         'rename' =>
 "        Rename an object:
-            $0 rename -n newname.yourdomain.com hosts/host1.yourdomain.com",
+            $0 rename -n newname.ops.ch.flipkart.com hosts/hostdb.ops.ch.flipkart.com",
 
         'add' =>
 "        Add an object:
-            $0 add hosts/host1.yourdomain.com
+            $0 add hosts/hostdb.ops.ch.flipkart.com
         Add host to tag:
-            $0 add -m \"adding new member\" tags/nm-prod/members/new.yourdomain.com
+            $0 add -m \"adding new member\" tags/nm-prod/members/new.nm.flipkart.com
         Add a tag to another tag's members:
             $0 add -m \"inherited members\" tags/log_backup/members/\@log_flo_backup",
 
         'edit' =>
 "        Edit an object:
-            $0 edit hosts/host1.yourdomain.com/Network/Cname
+            $0 edit hosts/hostdb.ops.ch.flipkart.com/Network/Cname
         Edit an object, read data from file:
-            $0 edit -f hostconfig.txt hosts/host1.yourdomain.com
+            $0 edit -f hostconfig.txt hosts/hostdb.ops.ch.flipkart.com
         Edit members of a tag:
             $0 edit tags/nm-prod/members",
     );

@@ -14,11 +14,11 @@ my $hdb = HostDB::FileStore->new($id);
 
 my $output = $hdb->get([$revision_id]);
 
-my $success = $hdb->set($value[, $log, $user]);
+my $success = $hdb->set($value, $log, $user);
 
-my $success = $hdb->rename($newname[, $log, $user]);
+my $success = $hdb->rename($newname, $log, $user);
 
-my $success = $hdb->delete([$log, $user]);
+my $success = $hdb->delete($log, $user);
 
 my $revs = $hdb->revisions([$limit = 50]);
 
@@ -31,13 +31,12 @@ my $mtime = $hdb->mtime();
 package HostDB::FileStore;
 
 use strict;
-use HostDB::Shared qw($conf $logger);
+use HostDB::Shared qw( &get_conf $logger );
 use Data::Dumper;
-use Log::Log4perl;
 use YAML::Syck;
 use HostDB::Git;
 
-my $NAMESPACE_DIR = $conf->{NAMESPACE_DIR};
+my $NAMESPACE_DIR = get_conf('server.namespace_dir');
 
 # Additional information related to a key
 # This hash describes where is stored and in what format
@@ -70,7 +69,7 @@ sub _parse_resource_id {
     }
     if (@id_parts) {
         # Second part is always key
-        # hosts/host1.yourdomain.com
+        # hosts/host1.flipkart.com
         $parts{key} = shift @id_parts;
         $parts{_file} .= '/' . $parts{key};
         $parts{_content_type} = 'yaml';
@@ -116,7 +115,7 @@ sub _init_git {
 
 =over 8
 
-=item I<HostDB::FileStore->new($id, \%options)> - Returns a blessed perl object to represent a HostDB Object
+=item I<HostDB::FileStore-E<gt>new($id, \%options)> - Returns a blessed perl object to represent a HostDB Object
 
 STRING $id - ID to represent the HostDB Object
 
@@ -278,18 +277,19 @@ sub get {
     return (wantarray && $self->{_content_type} ~~ ['list', 'files']) ? split(/\n/, $output) : $output;
 }
 
-=item I<set($value[, $log, $user])> - Create or modify a HostDB Object
+=item I<set($value, $log, $user)> - Create or modify a HostDB Object
 
 Overwrites existing value if any. Returns 1 if successful.
 
 STRING $value - Value to set the object to.
 
-STRING $log, $user - Optional. If specified, will commit the change to revision control with author "user" and commit message "log".
+STRING $log, $user - Commit the change to revision control with author "user" and commit message "log".
 
 =cut
 
 sub set {
     my ($self, $value, $log, $user) = @_;
+    $logger->logcroak("4001: Missing commit message") if (!$log || $log =~ /^\s*$/);
     my $data = {};
     my $output = '';
     if (! -d "$NAMESPACE_DIR/$self->{namespace}") {
@@ -300,7 +300,7 @@ sub set {
         # as of now, no allowed operation requires a 'set' on directory 
         $logger->logconfess("4051: Writes are not allowed on $self->{id}");  
     }
-    if (($self->{meta_info} || $self->{record}) && ! -f $self->{_key_file}) {
+    if (($self->{meta_info} && ! -f $self->{_key_file}) || ($self->{record} && ! -f $self->{_file})) {
         # Trying to write inside non-existant key
         $logger->logconfess("4042: Parent resource $self->{namespace}/$self->{key} does not exist.");
     }
@@ -520,6 +520,9 @@ sub delete {
     if (! $self->{key}) {
         # as of now, no allowed operation requires a 'delete' on directory 
         $logger->logconfess("4051: Writes are not allowed on $self->{id}");  
+    }
+    if ($self->{meta_info} && !$self->{record}) {
+        $logger->logconfess("4051: Operation not allowed on $self->{id}");
     }
     
     defined $self->{versioned} || $self->_init_git({ user => $user });

@@ -1,14 +1,27 @@
 ---
-READ_ONLY: off
-NAMESPACE_DIR: /var/lib/hostdb/namespaces
-GIT_PATH: /usr/bin/git
-GIT_LOCK_FILE: /var/lock/hostdb-git.lock
-GIT_LOCK_TIMEOUT: 10
-USER_EMAIL_DOMAIN: yourdomain.com
-COOKIE_DOMAIN: yourdomain.com
-APP_USERS_CONF_FILE: /etc/hostdb/clients
-SESSION_CIPHER_KEY_FILE: /var/lib/hostdb/cipher_key
-LDAP_SERVER: "ldaps://ldap.yourdomain.com"
-LDAP_PORT: 636
-LDAP_BASE: "ou=People,dc=yourdomain,dc=com"
-LOGGER_CONF_FILE: /etc/hostdb/logger.conf
+server:
+  read_only: off
+  namespace_dir: /var/lib/hostdb/namespaces
+git:
+  path: /usr/bin/git
+  lock_file: /var/lock/hostdb-git.lock
+  lock_timeout: 10
+users:
+  system:
+    auth_method: file
+  human:
+    auth_method: ldaps
+    email_domain: yourdomain.com
+    cookie_domain: yourdomain.com
+auth:
+  file:
+    creds_file: /etc/hostdb/clients
+  ldaps:
+    server: ldap.yourdomain.com
+    users_dn: "ou=People,dc=yourdomain,dc=com"
+    groups_dn: "ou=Groups,dc=yourdomain,dc=com"
+session:
+  cipher_key_file: /var/lib/hostdb/cipher_key
+logger:
+  conf_file: /etc/hostdb/logger.conf
+

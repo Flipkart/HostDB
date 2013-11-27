@@ -3,45 +3,46 @@
 package HostDB::Git;
 
 use strict;
-use HostDB::Shared qw($conf $logger);
+use HostDB::Shared qw( &get_conf $logger );
 use Carp;
-use Log::Log4perl;
 use Data::Dumper;
-
-my $GIT = $conf->{GIT_PATH} || 'git';
-my $lock_file = $conf->{GIT_LOCK_FILE} || '/var/lock/hostdb-git.lock';
-my $timeout = $conf->{GIT_LOCK_TIMEOUT} || 10;
-my $user_domain = $conf->{USER_EMAIL_DOMAIN} || 'nodomain';
 
 $SIG{ALRM} = sub { $logger->logconfess("5034: Timed out waiting for lock") };
 
 sub new {
     my ($class, $work_tree, $author) = @_;
     my $self = {
-        work_tree => $work_tree || $conf->{NAMESPACE_DIR},
-        author    => $author || getpwuid($<),
+        git          => get_conf('git.path') || 'git',
+        work_tree    => $work_tree || get_conf('server.namespace_dir'),
+        author       => $author || getpwuid($<),
+        domain       => get_conf('users.human.email_domain') || 'nodomain',
+        lock_file    => get_conf('git.lock_file') || '/var/lock/hostdb-git.lock',
+        lock_timeout => get_conf('git.lock_timeout') || 10,
     };
-    -x $GIT || $logger->logconfess("5002: $GIT is not executable.");
+    -x $self->{git} || $logger->logconfess("5002: $self->{git} is not executable.");
     bless $self;
 }
 
 sub txn_begin {
     my ($self) = @_;
-    return if exists $self->{_lock_fh}; #already in transaction
-    open($self->{_lock_fh}, '>', $lock_file);
-    alarm $timeout;
+    return 1 if exists $self->{_lock_fh}; #already in transaction
+    open($self->{_lock_fh}, '>', $self->{lock_file});
+    alarm $self->{lock_timeout};
     flock($self->{_lock_fh}, 2); # Exclusive Lock
     alarm 0; # Disable alarm if lock is acquired
     #discard uncommitted local changes if any
     my $out = ($self->run('reset', '--hard'))[1]; # $out will look like 'HEAD is now at 14aa753 commit_msg'
     $self->{_git_head} = (split(' ', $out))[4];
     $self->run('clean', '-fd');
+    return 1;
 }
 
 sub txn_commit {
     my ($self, $log) = @_;
+    exists $self->{_lock_fh} || $logger->logcroak("5002: Not in a transaction");
+    $logger->logcroak("4001: Missing commit message") if (!$log || $log =~ /^\s*$/);
     $self->run('commit', '-am', $log);
-    $self->txn_end();
+    $self->_txn_end();
 }
 
 sub txn_rollback {
@@ -49,29 +50,30 @@ sub txn_rollback {
     exists $self->{_lock_fh} || $logger->logcroak("5002: Not in a transaction");
     $self->run('reset', '--hard', $self->{_git_head});
     $self->run('clean', '-fd');
-    $self->txn_end();
+    $self->_txn_end();
 }
 
-sub txn_end {
+sub _txn_end {
     my ($self) = @_;
     close  $self->{_lock_fh};
     delete $self->{_lock_fh};
     delete $self->{_git_head};
+    return 1;
 }
 
 sub run {
     my ($self, @args) = @_;
     $ENV{GIT_AUTHOR_NAME}  = $self->{author};
-    $ENV{GIT_AUTHOR_EMAIL} = "$self->{author}\@$user_domain";
+    $ENV{GIT_AUTHOR_EMAIL} = "$self->{author}\@$self->{domain}";
     $ENV{GIT_WORK_TREE}    = $self->{work_tree};
     $ENV{GIT_DIR}          = "$self->{work_tree}/.git";
-    $logger->debug("Running $GIT @args");
+    $logger->debug("Running $self->{git} @args");
     # nice read: http://blog.0x1fff.com/2009/09/howto-execute-system-commands-in-perl.html
-    open(my $CMD, '-|', $GIT, @args);
-    my $output = do { local $/; <$CMD> };
-    close $CMD;
+    open(my $cmd, '-|', $self->{git}, @args);
+    my $output = do { local $/; <$cmd> };
+    close $cmd;
     my $rc = $? >> 8; # get actual command exit status
-    $rc && $logger->logconfess("Command: '$GIT @args' failed with RC: $rc");
+    $rc && $logger->logconfess("Command: '$self->{git} @args' failed with RC: $rc");
     return (wantarray) ? ($rc, $output) : $rc;
 }
 

@@ -6,10 +6,10 @@ use base qw(Exporter);
 our @EXPORT = qw(can_modify);
 
 use strict;
-use HostDB::Shared qw($logger);
+use HostDB::Shared qw( $logger );
 use HostDB::FileStore;
+use HostDB::Auth::LDAP;
 use Data::Dumper;
-use Log::Log4perl;
 use YAML::Syck;
 
 my %meta_info = (
@@ -18,8 +18,8 @@ my %meta_info = (
 );
 
 sub _get_acl {
-    my ($user, $namespace, $key) = @_;
-    $logger->debug("$user:$namespace:$key");
+    my ($namespace, $key) = @_;
+    $logger->debug("$namespace:$key");
     $key = '.global' if (! defined $key);
     my $id = "$namespace/$key/perms";
     my $store = HostDB::FileStore->new($id);
@@ -33,10 +33,7 @@ sub _get_acl {
     
     my $perms = Load($resp) or $logger->logconfess("5001: Unable to load YAML: $id");
     $logger->debug(sub { Dumper $perms});
-    if (exists $perms->{$user}) {
-        return $perms->{$user};
-    }
-    return;   #undef
+    return $perms;
 }
 
 sub can_modify {
@@ -53,39 +50,33 @@ sub can_modify {
     $logger->logconfess('4001: Invalid username') if (!defined $user || $user =~ /^\s*$/);
     $logger->debug("$resource:$user:$namespace:$key");
     
-    my $view;
+    my $perms;
     my @groups;
 
     # First check key specific ACL if key is defined.
     if (defined $key) {
-        $view = _get_acl($user, $namespace, $key);
-        return 1 if (exists $view->{$resource} && $view->{$resource} eq 'RW');
-        return 0 if (exists $view->{$resource} && $view->{$resource} eq 'RO');
-        @groups = split (/\n/, `/usr/bin/getent group | grep "\[^a-z\]$user\[^a-z\]" | cut -d: -f1`);  #improve
+        $perms = _get_acl($namespace, $key);
+        return 1 if (exists $perms->{$user}->{$resource} && $perms->{$user}->{$resource} eq 'RW');
+        return 0 if (exists $perms->{$user}->{$resource} && $perms->{$user}->{$resource} eq 'RO');
+        @groups = HostDB::Auth::LDAP::groups($user);
         foreach (@groups) {
-            $view = _get_acl($_, $namespace, $key);
-            return 1 if (exists $view->{$resource} && $view->{$resource} eq 'RW');
+            return 1 if (exists $perms->{$_}->{$resource} && $perms->{$_}->{$resource} eq 'RW');
         }
         foreach (@groups) {
-            $view = _get_acl($_, $namespace, $key);
-            return 0 if (exists $view->{$resource} && $view->{$resource} eq 'RO');
+            return 0 if (exists $perms->{$_}->{$resource} && $perms->{$_}->{$resource} eq 'RO');
         }
     }
 
     # If there is no key specific ACL, check in namespace level.
-    $view  = _get_acl($user, $namespace);
-    return 1 if (exists $view->{$resource} && $view->{$resource} eq 'RW');
-    return 0 if (exists $view->{$resource} && $view->{$resource} eq 'RO');
-    if (! @groups) {
-        @groups = split (/\n/, `/usr/bin/getent group | grep "\[^a-z\]$user\[^a-z\]" | cut -d: -f1`);  #improve
+    $perms  = _get_acl($namespace);
+    return 1 if (exists $perms->{$user}->{$resource} && $perms->{$user}->{$resource} eq 'RW');
+    return 0 if (exists $perms->{$user}->{$resource} && $perms->{$user}->{$resource} eq 'RO');
+    @groups = HostDB::Auth::LDAP::groups($user) if ! @groups;
+    foreach (@groups) {
+        return 1 if (exists $perms->{$_}->{$resource} && $perms->{$_}->{$resource} eq 'RW');
     }
     foreach (@groups) {
-        $view = _get_acl($_, $namespace);
-        return 1 if (exists $view->{$resource} && $view->{$resource} eq 'RW');
-    }
-    foreach (@groups) {
-        $view = _get_acl($_, $namespace);
-        return 0 if (exists $view->{$resource} && $view->{$resource} eq 'RO');
+        return 0 if (exists $perms->{$_}->{$resource} && $perms->{$_}->{$resource} eq 'RO');
     }
 
     return 0;

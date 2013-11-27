@@ -7,28 +7,43 @@ use Log::Log4perl;
 use Data::Dumper;
 require Exporter;
 use base qw(Exporter);
-our @EXPORT_OK = qw(&read_config $conf $logger);
+our @EXPORT_OK = qw(&load_conf &get_conf $logger);
 
-our ($conf, $logger);
-my $HOSTDB_CONF = '/etc/hostdb/server_conf.yaml';
+my $conf;
+our $logger;
 
-read_config();
+# Try loading conf from default location
+eval { load_conf('/etc/hostdb/server_conf.yaml') };
 
-sub read_config {
-    $conf = LoadFile($HOSTDB_CONF);
+sub get_conf {
+    my $param = shift;
+    defined $conf or load_conf();
+    my $val = $conf;
+    foreach (split /\./, $param) {
+        return undef if (! exists $val->{$_});
+        $val = $val->{$_};
+    }
+    return ref($val) ? undef : $val;
+}
+
+sub load_conf {
+    my $conf_file = shift;
+
+    #print "Loading conf from $conf_file\n";
+    $conf = LoadFile($conf_file);
     
-    Log::Log4perl->init($conf->{LOGGER_CONF_FILE});
+    Log::Log4perl->init($conf->{logger}->{conf_file});
     $logger = Log::Log4perl->get_logger('HostDB');
 
-    $logger->info("Loaded config from $HOSTDB_CONF");
+    $logger->info("Loaded config from $conf_file");
     $logger->debug(sub { Dumper $conf });
 
-    open(my $fh, "<", $conf->{SESSION_CIPHER_KEY_FILE})
-        or $logger->logconfess("5000: Unable to open $conf->{SESSION_CIPHER_KEY_FILE}. $!");
+    open(my $fh, "<", $conf->{session}->{cipher_key_file})
+        or $logger->logconfess("5000: Unable to open $conf->{session}->{cipher_key_file}. $!");
     flock($fh, 1);
-    $conf->{SESSION_CIPHER_KEY} = <$fh>;
+    $conf->{session}->{cipher_key} = readline $fh;
     close $fh;
-    chomp $conf->{SESSION_CIPHER_KEY};
+    chomp $conf->{session}->{cipher_key};
 }
 
 1;
