@@ -12,6 +12,7 @@ use Data::Dumper;
 
 my %sub_map = (
     'get'       => \&get,
+    'multi_get' => \&multi_get,
     'edit'      => \&edit,
     'add'       => \&add,
     'delete'    => \&delete,
@@ -43,6 +44,17 @@ sub get {
     my $id = shift @ARGV;
     $id or usage('get');
     print $hdb->get($id, $revision, $raw) . "\n";
+}
+
+sub multi_get {
+    my ($list_id, $revision);
+    GetOptions(
+        'foreach=s' => \$list_id,
+        'rev|r=s'   => \$revision,
+    );
+    my $id = shift @ARGV;
+    $id or usage('multi_get');
+    print $hdb->multi_get($id, $list_id, $revision) . "\n";
 }
 
 sub revisions {
@@ -139,7 +151,7 @@ sub add {
         (-f $source && -r $source ) or die "Source file unreadable";
         eval { $data = LoadFile($source) };
         if ($@) {
-            _yn_prompt("$@\nYAML parsing failed on source file. Continue", $force) or die "Aborted";
+            _yn_prompt("$@\nYAML parsing failed on source file. Continue?", $force) or die "Aborted";
         }
         open (my $fh, "<", $source) or die "Unable to open $source";
         $value = do { local $/; <$fh> };
@@ -151,7 +163,7 @@ sub add {
         system ("vim $tf1");
         eval { $data = LoadFile($tf1) };
         if ($@) {
-            _yn_prompt("$@\nYAML parsing failed. Continue", $force) or die "Aborted";
+            _yn_prompt("$@\nYAML parsing failed. Continue?", $force) or die "Aborted";
         }
         open (my $tfh1, "<", $tf1) or die "Unable to open $tf1";
         $value = do { local $/; <$tfh1> };
@@ -176,7 +188,7 @@ sub edit {
     if ($source) {
         eval { $data = LoadFile($source) };
         if ($@) {
-            _yn_prompt("$@\nYAML parsing failed on source file. Continue", $force) or die "Aborted";
+            _yn_prompt("$@\nYAML parsing failed on source file. Continue?", $force) or die "Aborted";
         }
         open (my $fh, "<", $source) or die "Unable to open $source";
         $value = do { local $/; <$fh> };
@@ -197,7 +209,7 @@ sub edit {
         }
         eval { $data = LoadFile($tf2) };
         if ($@) {
-            _yn_prompt("$@\nYAML parsing failed. Continue", $force) or die "Aborted";
+            _yn_prompt("$@\nYAML parsing failed. Continue?", $force) or die "Aborted";
         }
         open (my $tfh2, "<", $tf2) or die "Unable to open $tf2";
         $value = do { local $/; <$tfh2> };
@@ -276,6 +288,7 @@ sub usage {
     my $action = shift;
     my %synopsis = (
         'get'       => '        get       [--rev|r=<revision_id>] [--original|o] <id>',
+        'multi_get' => '        multi_get --foreach=<list_id> [--rev|r=<revision_id>] <id>',
         'revisions' => '        revisions [--limit|l=<count>] <id>',
         'parents'   => '        parents   --namespace|n=<namespace> [hosts/]<host>',
         'derived'   => '        derived   --namespace|n=<namespace> [hosts/]<host>',
@@ -295,6 +308,12 @@ sub usage {
             $0 get tags/nm-prod
         Get tag members:
             $0 get tags/nm-prod/members",
+
+        'multi_get' =>
+"        Get IPs of all hosts:
+            $0 multi_get --foreach=hosts hosts/xyz/Network/IP
+        Get complete host config of members of a tag
+            $0 multi_get --foreach=tags/tag1/members hosts/abc",
 
         'parents' =>
 "        Get tags of host:

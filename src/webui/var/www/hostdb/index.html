@@ -242,6 +242,8 @@ Status: \n\
 '
         var curContent;
         var path;
+        var pathForEdit;
+        var tabForEdit;
         var spare_pool_admins = new Array();
         $(document).ready(function() {
             $("#navspares").hide();
@@ -312,7 +314,7 @@ Status: \n\
         $("#btnSignOut").click(function() {
             var confirmed = confirm("End your session?");
             if (confirmed) {
-                $.removeCookie('HostDB', { path: '/', domain: 'your.cookie.domain.com', secure: 1 });
+                $.removeCookie('HostDB', { path: '/', domain: '.your.cookie.domain.com', secure: 1 });
                 username = '';
                 $("#frmSignOut").hide();
                 $("#frmSignIn").show();
@@ -469,19 +471,19 @@ Status: \n\
         //});
         
         $(document).on("click", "#btnEdit", function(event) {
-            path = parsePath();
+            pathForEdit = parsePath();
             if ($.cookie('HostDB') == null) {
                 alert("Please sign in.");
                 return;
             }
             var query;
-            var tab = $('.nav-tabs .active a').attr("href");
-            if (tab == '#members') {
-                query = 'auth/can_modify?user=' + username + '&id=' + path.namespace + '/' + path.key + '/members';
+            tabForEdit = $('.nav-tabs .active a').attr("href");
+            if (tabForEdit == '#members') {
+                query = 'auth/can_modify?user=' + username + '&id=' + pathForEdit.namespace + '/' + pathForEdit.key + '/members';
                 $("#editBoxName").attr("readonly", "readonly");
             }
-            else if (tab == '#config') {
-                query = 'auth/can_modify?user=' + username + '&id=' + path.namespace + '/' + path.key;
+            else if (tabForEdit == '#config') {
+                query = 'auth/can_modify?user=' + username + '&id=' + pathForEdit.namespace + '/' + pathForEdit.key;
                 $("#editBoxName").removeAttr("readonly");
             }
             getContent(hostdbApi + query,
@@ -490,25 +492,25 @@ Status: \n\
                         alert('Permission denied.');
                         return;
                     }
-                    if (tab == '#members') {
-                        query = path.namespace + '/' + path.key + '/members?raw=true';
+                    if (tabForEdit == '#members') {
+                        query = pathForEdit.namespace + '/' + pathForEdit.key + '/members?raw=true';
                     }
-                    else if (tab == '#config') {
-                        query = path.namespace + '/' + path.key;
+                    else if (tabForEdit == '#config') {
+                        query = pathForEdit.namespace + '/' + pathForEdit.key;
                     }
                     getContent(hostdbApi + query,
                         function(output) {
-                            $("#editBoxName").val(path.key);
-                            if (tab == '#members') {
+                            $("#editBoxName").val(pathForEdit.key);
+                            if (tabForEdit == '#members') {
                                 $("#editBoxName").attr("readonly", "readonly");
-                                $("#editBoxLabel").text('Edit members of ' + path.key);
-                                query = path.namespace + '/' + path.key + '/members?meta=revisions';
+                                $("#editBoxLabel").text('Edit members of ' + pathForEdit.key);
+                                query = pathForEdit.namespace + '/' + pathForEdit.key + '/members?meta=revisions';
                             }
-                            else if (tab == '#config') {
+                            else if (tabForEdit == '#config') {
                                     $("#editBoxName").removeAttr("readonly");
-                                    $("#editBoxLabel").text('Edit config of ' + path.key);
+                                    $("#editBoxLabel").text('Edit config of ' + pathForEdit.key);
                             //        $("#revList").parent().show();
-                                    query = path.namespace + '/' + path.key + '?meta=revisions';
+                                    query = pathForEdit.namespace + '/' + pathForEdit.key + '?meta=revisions';
                                }
 			    getContent(hostdbApi + query,function(output){
 			        var arr=output.split("\n");
@@ -548,12 +550,11 @@ Status: \n\
             if ($("#editBoxText").val() != curContent) {
                 var data;
                 var id;
-                var tab = $('.nav-tabs .active a').attr("href");
-                if (tab == '#config') {
-                    id = path.namespace + '/' + path.key;
+                if (tabForEdit == '#config') {
+                    id = pathForEdit.namespace + '/' + pathForEdit.key;
                 }
-                else if (tab == '#members') {
-                    id = path.namespace + '/' + path.key + '/members';
+                else if (tabForEdit == '#members') {
+                    id = pathForEdit.namespace + '/' + pathForEdit.key + '/members';
                 }
                 else {
                     return;
@@ -570,13 +571,13 @@ Status: \n\
                     }
                 );
             }
-            if ($("#editBoxName").val().trim() != path.key) {
-                var id = path.namespace + '/' + path.key;
+            if ($("#editBoxName").val().trim() != pathForEdit.key) {
+                var id = pathForEdit.namespace + '/' + pathForEdit.key;
                 var data = 'newname=' + $("#editBoxName").val().trim() + '&log=' + escape($("#editBoxLog").val()) ;
                 postContent(hostdbApi + id, data,
                     function(output) {
                         $('#editBox').modal('hide');
-                        history.pushState('', '', '/' + path.namespace + '/' + $("#editBoxName").val().trim() + location.hash);
+                        history.pushState('', '', '/' + pathForEdit.namespace + '/' + $("#editBoxName").val().trim() + location.hash);
                         refreshKeysList = true;
                         loadContentFromHref();
                     },

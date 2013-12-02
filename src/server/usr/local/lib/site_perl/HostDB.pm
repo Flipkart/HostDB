@@ -251,7 +251,7 @@ sub get {
             my $out = {};
             foreach (sort @parents) {
                 my $s = HostDB::FileStore->new("$options->{from}/$_");
-                $out->{$_} = Load(scalar $s->get());
+                $out->{$_} = Load(scalar $s->get($options->{revision}));
             }
             #$logger->debug(sub {Dumper $out});
             $output = Dump($out);
@@ -259,13 +259,14 @@ sub get {
     }
     elsif (exists $options->{foreach}) {
         my $s = HostDB::FileStore->new($options->{foreach});
-        my @keys = $s->get();
+        my @keys = $s->get($options->{revision});
         my $out = {};
+        my @parts = split /\//, $id;
         foreach my $key (@keys) {
-            my $_id = $id;
-            $_id =~ s/\*/$key/;
+            $parts[1] = $key;
+            my $_id = join '/', @parts;
             $s = HostDB::FileStore->new($_id);
-            eval { $out->{$key} = Load(scalar $s->get()) };
+            eval { $out->{$key} = Load(scalar $s->get($options->{revision})) };
             $out->{$key} = undef if $@;
         }
         $output = Dump($out);

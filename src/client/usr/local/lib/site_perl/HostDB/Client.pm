@@ -215,6 +215,24 @@ sub get {
     return $response->is_success ? $response->content : undef;
 }
 
+=item I<multi_get($get_id, $list_id[,$revision])> - Get an object from multiple keys.
+
+STRING $get_id - Resource ID to get. Key will be replaced with each key generated from $list_id
+
+STRING $list_id - HostDB ID which represents a list of keys
+
+STRING $revision - If specified, gets data from this revision
+
+=cut
+
+sub multi_get {
+    my ($self, $get_id, $list_id, $revision) = @_;
+    my $uri = "$self->{api}/$get_id?foreach=$list_id";
+    $uri .= "&revision=$revision" if defined $revision;
+    my $response = $self->_ua_request('GET', $uri);
+    return $response->is_success ? $response->content : undef;
+}
+
 =item I<parents($host, $namespace)> - Gets parents of a host in the given namespace.
 
 STRING $host - Hostname. ID hosts/$host must exist
