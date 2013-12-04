@@ -88,11 +88,13 @@ $rev = (split / /, $revs[0])[0];
 is(scalar $hdb->get($rev), 'web1.domain.com', "Get Members from revision");
 
 # Tests on member
-$hdb = HostDB::FileStore->new('tags/web_servers/members/@tag1');
+$hdb = HostDB::FileStore->new('tags/db_servers');
+ok($hdb->set('--- testtag', 'test tag'), "Create Tag");
+$hdb = HostDB::FileStore->new('tags/db_servers/members/@tag1');
 ok($hdb->set('', "test"), "Set member");
 is($hdb->get(), '@tag1', "Get on member just returns itself");
 ok($hdb->rename('web3.domain.com', "rename"), "Rename Member");
-$hdb = HostDB::FileStore->new('tags/web_servers/members/web3.domain.com');
+$hdb = HostDB::FileStore->new('tags/db_servers/members/web3.domain.com');
 ok($hdb->delete("test"), "Delete member");
 
 done_testing();

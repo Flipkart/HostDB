@@ -300,7 +300,13 @@ sub set {
         # as of now, no allowed operation requires a 'set' on directory 
         $logger->logconfess("4051: Writes are not allowed on $self->{id}");  
     }
-    if (($self->{meta_info} && ! -f $self->{_key_file}) || ($self->{record} && ! -f $self->{_file})) {
+    if ($self->{meta_info}) {
+        if (! -f $self->{_key_file}) {
+            # Trying to write inside non-existant key
+            $logger->logconfess("4042: Parent resource $self->{namespace}/$self->{key} does not exist.");
+        }
+    }
+    elsif ($self->{record} && ! -f $self->{_file}) {
         # Trying to write inside non-existant key
         $logger->logconfess("4042: Parent resource $self->{namespace}/$self->{key} does not exist.");
     }
@@ -611,13 +617,19 @@ INTEGER $limit - Optional. If specified, returns last "$limit" revisions. Defaul
 
 sub revisions {
     my ($self, $limit) = @_;
-    $logger->logconfess("4041: Resource $self->{id} does not exist") if (! -e $self->{_file});
-    $self->_init_git({ user => 'dummy' });
-    $limit = 50 if (! $limit);
-    my @cmd = ('log', '--pretty=format:%h - %an, %ai : %s', '-' . $limit, $self->{_file});
-    my ($rc, $out) = $self->{_git}->run(@cmd);
-    $logger->logconfess("5002: git @cmd failed with code: $rc") if ($rc);
-    chomp $out;
+    my $out = '';
+    if (! -e $self->{_file}) {
+        $logger->logconfess("4041: Resource $self->{id} does not exist") if (!exists $self->{meta_info});
+    }
+    else {
+        $self->_init_git({ user => 'dummy' });
+        $limit = 50 if (! $limit);
+        my @cmd = ('log', '--pretty=format:%h - %an, %ai : %s', '-' . $limit, $self->{_file});
+        my $rc;
+        ($rc, $out) = $self->{_git}->run(@cmd);
+        $logger->logconfess("5002: git @cmd failed with code: $rc") if ($rc);
+        chomp $out;
+    }
     return wantarray ? split "\n", $out : $out;
 }
 
