@@ -2,7 +2,7 @@ Package: fk-ops-hostdb-cli
 Version: 1._VERSION_
 Section: flipkart/ops
 Priority: standard
-Depends:  libterm-readkey-perl, libtext-diff-perl, libyaml-syck-perl, libwww-perl
+Depends:  libterm-readkey-perl, libtext-diff-perl, libyaml-syck-perl, libwww-perl, libio-socket-ssl-perl
 Architecture: all
 Maintainer: HostDB Dev <hostdb@flipkart.com>
 Description: HostDB Command Line Interface and Perl module
