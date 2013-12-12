@@ -89,6 +89,7 @@ while (my $cgi = new CGI::Fast) {
                                             -expires => '+1d',
                                             -secure => 1,
                                          );
+                print "Status: 201 Session created\n\n";
                 print $cgi->header(-cookie=>$cookie);
                 #print $cgi->header("text/html");
                 print "$session";
