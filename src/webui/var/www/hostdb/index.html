@@ -190,7 +190,7 @@
     <!--<script src="/bootstrap/js/bootstrap-collapse.js"></script>
     <script src="/bootstrap/js/bootstrap-carousel.js"></script>-->
     <script src="/bootstrap/js/bootstrap-typeahead.js"></script>
-    <script src="/assets/js/yaml.js"></script>
+    <script src="/assets/js/js-yaml.min.js"></script>
     <script src="/assets/js/jquery.cookie.js"></script>
     <!--<script src="/assets/js/URI.js"></script>-->
 
@@ -382,7 +382,7 @@ Status: \n\
             getContent(hostdbApi + query,
                 function(output) {
                     $("#derivedTags").children("#txtConfig").val(output);
-                    var parents = Object.keys(YAML.eval(output));
+                    var parents = Object.keys(jsyaml.load(output));
                     var html = '';
                     for (i=0, len=parents.length; i < parents.length; i++) {
                         html = html + '<a href="/tags/' + parents[i] + '" style="padding: 0 10px">' + parents[i] + '</a>';
