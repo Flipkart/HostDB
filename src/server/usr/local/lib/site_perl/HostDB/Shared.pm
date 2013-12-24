@@ -5,6 +5,8 @@ use strict;
 use YAML::Syck;
 use Log::Log4perl;
 use Data::Dumper;
+use KeyDB::Client;
+
 require Exporter;
 use base qw(Exporter);
 our @EXPORT_OK = qw(&load_conf &get_conf $logger);
@@ -37,13 +39,17 @@ sub load_conf {
 
     $logger->info("Loaded config from $conf_file");
     $logger->debug(sub { Dumper $conf });
-
-    open(my $fh, "<", $conf->{session}->{cipher_key_file})
-        or $logger->logconfess("5000: Unable to open $conf->{session}->{cipher_key_file}. $!");
-    flock($fh, 1);
-    $conf->{session}->{cipher_key} = readline $fh;
-    close $fh;
-    chomp $conf->{session}->{cipher_key};
+    if (exists $conf->{session}->{cipher_key_keydb_bucket} && $conf->{session}->{cipher_key_keydb_key}) {
+        $conf->{session}->{cipher_key} = keydbgetkey($conf->{session}->{cipher_key_keydb_bucket}, $conf->{session}->{cipher_key_keydb_key});
+    }
+    else {
+        open(my $fh, "<", $conf->{session}->{cipher_key_file})
+            or $logger->logconfess("5000: Unable to open $conf->{session}->{cipher_key_file}. $!");
+        flock($fh, 1);
+        $conf->{session}->{cipher_key} = readline $fh;
+        close $fh;
+        chomp $conf->{session}->{cipher_key};
+    }
 }
 
 1;
