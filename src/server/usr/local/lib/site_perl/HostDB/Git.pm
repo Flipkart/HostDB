@@ -41,7 +41,7 @@ sub txn_commit {
     my ($self, $log) = @_;
     exists $self->{_lock_fh} || $logger->logcroak("5002: Not in a transaction");
     $logger->logcroak("4001: Missing commit message") if (!$log || $log =~ /^\s*$/);
-    $self->run('commit', '-am', $log);
+    $self->run('commit', '--allow-empty', '-am', $log);
     $self->_txn_end();
 }
 
