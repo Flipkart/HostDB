@@ -20,7 +20,7 @@ sub auth {
     my ($user, $pass) = @_;
     _get_creds();
     return 0 if ! exists $creds->{$user};
-    my $md5sum = `echo "$pass" | /usr/bin/md5sum - | cut -d' ' -f1`;
+    my $md5sum = `echo -n '$pass' | /usr/bin/md5sum | cut -d' ' -f1`;
     chomp $md5sum;
     return ($md5sum eq $creds->{$user}->{password}) ? 1 : 0;
 }
