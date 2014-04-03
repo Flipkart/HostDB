@@ -240,7 +240,7 @@ sub get {
     }
     else { # File doesn't exist
         # If ID is for a meta property of key, just return empty if key exists. Else die.
-        return if ($self->{meta_info} && -e $self->{_key_file});
+        return if ($self->{meta_info} && !$self->{record} && -e $self->{_key_file});
         $logger->logconfess("4041: Resource $self->{id} does not exist.");
     }
     
