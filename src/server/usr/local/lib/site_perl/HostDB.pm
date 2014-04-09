@@ -258,14 +258,23 @@ sub get {
         }
     }
     elsif (exists $options->{foreach}) {
-        my $s = HostDB::FileStore->new($options->{foreach});
-        my @keys = $s->get($options->{revision});
+        my $tmp = $options->{foreach};
+        $tmp =~ s/^\/+//; $tmp =~ s/\/+$//;
+        my @keys;
+        if ($tmp =~ /\/members/) {
+            my @p = split '/', $tmp;
+            @keys = _get_members($p[0], $p[1], $options->{revision});
+        }
+        else {
+            my $s = HostDB::FileStore->new($options->{foreach});
+            @keys = $s->get($options->{revision});
+        }
         my $out = {};
         my @parts = split /\//, $id;
         foreach my $key (@keys) {
             $parts[1] = $key;
             my $_id = join '/', @parts;
-            $s = HostDB::FileStore->new($_id);
+            my $s = HostDB::FileStore->new($_id);
             eval { $out->{$key} = Load(scalar $s->get($options->{revision})) };
             $out->{$key} = undef if $@;
         }
