@@ -31,11 +31,10 @@ package HostDB;
 use strict;
 use HostDB::Shared qw( $logger );
 use HostDB::FileStore;
+use HostDB::FileCache;
 use HostDB::ACL;
 use Data::Dumper;
 use YAML::Syck;
-
-my %parents_map_cache = ();
 
 sub _get_parents {
     my ($host, $namespace, $revision) = @_;
@@ -54,8 +53,8 @@ sub _get_parents {
         return ( @out );
     };
     
-    if (!$revision && exists $parents_map_cache{$namespace}) {
-        $parents_map = $parents_map_cache{$namespace};
+    if (!$revision && cache_exists("parents_map_$namespace")) {
+        $parents_map = Load(cache_get("parents_map_$namespace"));
     }
     else {
         # Generates key->parents map for a namespace
@@ -74,7 +73,7 @@ sub _get_parents {
             }
         }
         # Cache parents map of HEAD since it is a very common request
-        $parents_map_cache{$namespace} = $parents_map if (! $revision);
+        cache_set("parents_map_$namespace", Dump($parents_map)) if (! $revision);
         #$logger->debug(sub { Dumper $parents_map });
     }
     my @parents = $_get_parents_rec->($host);
@@ -350,7 +349,7 @@ sub set {
             next if (/^\s*#/ || /^\s*$/);
             _validate_member_addition($store->{namespace}, $store->{key}, $_);
         }
-        delete $parents_map_cache{$store->{namespace}}; # Invalidate
+        cache_delete("parents_map_" . $store->{namespace}); # Invalidate
     }
 
     $store->set($value, $options->{log}, $options->{user});
@@ -406,7 +405,7 @@ sub rename {
     
     #finally, rename the actual object. This does a txn_commit also.
     $store->rename($newname, $options->{log}, $options->{user});
-    delete $parents_map_cache{$store->{namespace}}; # Invalidate
+    cache_delete("parents_map_" . $store->{namespace}); # Invalidate
     return wantarray ? (1, $store->mtime()) : 1;
 }
 
@@ -443,8 +442,8 @@ sub delete {
         }
     }
     $store->delete($options->{log}, $options->{user});
-    delete $parents_map_cache{$store->{namespace}}; # Invalidate
-
+    cache_delete("parents_map_" . $store->{namespace}); # Invalidate
+    
     return 1;
 }
 
