@@ -54,7 +54,7 @@ sub _get_parents {
     };
     
     if (!$revision && cache_exists("parents_map_$namespace")) {
-        $parents_map = Load(cache_get("parents_map_$namespace"));
+        $parents_map = cache_get("parents_map_$namespace");
     }
     else {
         # Generates key->parents map for a namespace
@@ -73,8 +73,7 @@ sub _get_parents {
             }
         }
         # Cache parents map of HEAD since it is a very common request
-        cache_set("parents_map_$namespace", Dump($parents_map)) if (! $revision);
-        #$logger->debug(sub { Dumper $parents_map });
+        cache_set("parents_map_$namespace", $parents_map) if (! $revision);
     }
     my @parents = $_get_parents_rec->($host);
     my %out = ();
