@@ -1,6 +1,11 @@
 #!/usr/bin/perl
 # A simple shared object cache.
 # Written to replace the per-process cache of parents map.
+
+# Why not IPC::Shareable? It did not work well for me because
+# while objects were constructed, it created a lot of shm segments
+# and reaches the OS limit quickly. Or may be I didnt use it the right way.
+
 package HostDB::FileCache;
 
 require Exporter;
