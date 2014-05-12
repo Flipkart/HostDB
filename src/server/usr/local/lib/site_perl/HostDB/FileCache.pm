@@ -18,21 +18,9 @@ use Data::Dumper;
 use YAML::Syck;
 
 my $cache_dir = get_conf('server.cache_dir') || '/tmp/hostdb';
+my $cache_ttl = get_conf('server.cache_ttl') || 3600;
 
-if (-d $cache_dir) {
-    # invalidate more than 1 hr old cache entries.
-    opendir(my $dh, $cache_dir)
-	|| $logger->logconfess("5031: Can't read directory: $cache_dir. $!");
-    my @files = sort grep { ! /^\./ } readdir($dh);
-    closedir $dh;
-    my $exp = time - 3600;
-    foreach my $key (@files) {
-        if ((stat("$cache_dir/$key"))[9] < $exp) {
-            unlink "$cache_dir/$key" or $logger->logconfess("5032: Can't delete file: $cache_dir/$key. $!");
-        }
-    }
-}
-else {
+if (! -d $cache_dir) {
     mkdir $cache_dir or $logger->logconfess("5032: Can't create dir: $cache_dir. $!");
 }
 
@@ -41,7 +29,14 @@ my %mem_mtime = (); # Timestamp of in-memory items used to check if it is older 
 
 sub cache_exists {
     my $key = shift;
-    return -e "$cache_dir/$key";
+    -e "$cache_dir/$key" || return;
+    # invalidate if cache is old.
+    my $exp = time - $cache_ttl;
+    if ((stat("$cache_dir/$key"))[9] < $exp) {
+        unlink "$cache_dir/$key" or $logger->logconfess("5032: Can't delete file: $cache_dir/$key. $!");
+        return;
+    }
+    return 1;
 }
 
 sub cache_get {
