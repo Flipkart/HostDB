@@ -15,7 +15,7 @@ our @EXPORT = qw(cache_exists cache_get cache_set cache_delete);
 use strict;
 use HostDB::Shared qw( $logger &get_conf );
 use Data::Dumper;
-use YAML::Syck;
+use Storable qw(lock_store lock_retrieve);
 
 my $cache_dir = get_conf('server.cache_dir') || '/tmp/hostdb';
 my $cache_ttl = get_conf('server.cache_ttl') || 3600;
@@ -44,11 +44,7 @@ sub cache_get {
     return unless cache_exists($key);
     # Read from disk if in-memory cache doesnt exist or is stale
     if (!exists $mem_cache{$key} || (stat("$cache_dir/$key"))[9] > $mem_mtime{$key}) {
-        open (my $fh, "<", "$cache_dir/$key") or $logger->logconfess("5031: Can't read file $cache_dir/$key. $!");
-        flock($fh, 1);
-        my $value = do { local $/; <$fh> };
-        close $fh;
-        $mem_cache{$key} = Load($value);
+        $mem_cache{$key} = lock_retrieve("$cache_dir/$key") or $logger->logconfess("5032: Unable to retreive from $cache_dir/$key");
         $mem_mtime{$key} = time;
     }
     return $mem_cache{$key};
@@ -56,18 +52,7 @@ sub cache_get {
 
 sub cache_set {
     my ($key, $object) = @_;
-    my $fh;
-    if (cache_exists($key)) {
-        open($fh, "+<", "$cache_dir/$key") or $logger->logconfess("5032: Can't write to file: $cache_dir/$key. $!");
-        flock($fh, 2);
-        seek($fh, 0, 0); truncate($fh, 0);
-    }
-    else {
-        open ($fh, ">", "$cache_dir/$key") or $logger->logconfess("5032: Can't create file: $cache_dir/$key. $!");
-        flock($fh, 2);
-    }
-    print {$fh} Dump $object;
-    close $fh;
+    lock_store($object, "$cache_dir/$key") or $logger->logconfess("5032: Unable to store in $cache_dir/$key");
     $mem_cache{$key} = $object;
     $mem_mtime{$key} = time;
     return 1;
