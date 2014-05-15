@@ -19,7 +19,9 @@ my $conf;
 our $logger;
 
 # Try loading conf from default location
+# And sliently ignore if it fails. Dont let the module require fail.
 eval { load_conf('/etc/hostdb/server_conf.yaml') };
+$conf = undef if (! $conf->{session}->{cipher_key});
 
 sub get_conf {
     my $param = shift;
