@@ -134,7 +134,7 @@ namespaces/
 |   |-- server1      <server config - YAML>
 |   |-- server2
 |   |-- .perms/
-|       |-- .global  <permissions(ACL) for ‘hosts’ namespace - YAML>
+|       |-- .default  <permissions(ACL) for ‘hosts’ namespace - YAML>
 |       |-- server2  <any ACL overrides for server2 - YAML>
 |-- tags/            <’tags’ namespace>
     |-- tag1         <a tag or hostgroup config - YAML>
@@ -143,7 +143,7 @@ namespaces/
     |   |-- tag1     <servers related to this tag - LIST>
     |   |-- tag2
     |-- .perms/
-        |-- .global  <ACL for ‘tags’ namespace - YAML>
+        |-- .default  <ACL for ‘tags’ namespace - YAML>
         |-- tag1     <any ACL override for tag1 - YAML>
 
 ACL file format:

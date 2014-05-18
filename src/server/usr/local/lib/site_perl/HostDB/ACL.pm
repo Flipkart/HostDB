@@ -20,7 +20,7 @@ my %meta_info = (
 sub _get_acl {
     my ($namespace, $key) = @_;
     $logger->debug("$namespace:$key");
-    $key = '.global' if (! defined $key);
+    $key = '.default' if (! defined $key);
     my $id = "$namespace/$key/perms";
     my $store = HostDB::FileStore->new($id);
     my $resp;
