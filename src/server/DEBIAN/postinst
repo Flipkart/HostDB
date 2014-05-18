@@ -3,6 +3,9 @@ pushd /etc/apache2/sites-enabled/
 ln -s ../sites-available/hostdb hostdb
 popd
 
+[ -d /var/lib/hostdb ] || mkdir /var/lib/hostdb
+[ -d /var/log/hostdb ] || mkdir /var/log/hostdb
+
 chown -R www-data:www-data /etc/hostdb /var/lib/hostdb /var/log/hostdb
 
 a2enmod fcgid
