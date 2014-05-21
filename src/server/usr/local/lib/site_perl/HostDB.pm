@@ -339,10 +339,10 @@ sub set {
     if (exists $store->{meta_info} && $store->{meta_info} eq 'members') {
         my @members;
         if (exists $store->{record}) {
-            @members = map { chomp $_; $_ } ($store->{record});
+            @members = map { s/\s+$//; $_ } ($store->{record});
         }
         else {
-            @members = map { chomp $_; $_ } split /\n/, $value;
+            @members = map { s/\s+$//; $_ } split /\n/, $value;
         }
         foreach (@members) {
             next if (/^\s*#/ || /^\s*$/);
