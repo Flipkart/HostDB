@@ -65,10 +65,13 @@ sub _get_parents {
         foreach my $key (@keys) {
             my $members_store = HostDB::FileStore->new("$namespace/$key/members");
             my @members = $members_store->get($revision);
-            foreach (@members) {
-                chomp;
-                $parents_map->{$_} = [ ] if (!exists $parents_map->{$_});
-                push @{$parents_map->{$_}}, $key;
+            foreach my $mem (@members) {
+                $mem =~ s/\s+$//;
+                $mem =~ s/^\s+//;
+		next if $mem eq '';
+		next if $mem =~ /^\s*#/;
+                $parents_map->{$mem} = [ ] if (!exists $parents_map->{$mem});
+                push @{$parents_map->{$mem}}, $key;
                 #$logger->debug(sub { Dumper $parents_map });
             }
         }
