@@ -94,10 +94,11 @@ $_get_members_rec = sub {
     my $store = HostDB::FileStore->new("$namespace/$key/members");
     my @lines = $store->get($revision);
     foreach my $member (@lines) {
-        chomp $member;
-        next if ($member =~ /^\s*$/);
+        $member =~ s/\s+$//;
+        $member =~ s/^\s+//;
+        next if ($member eq '');
         next if ($member =~ /^\s*#/);
-        if ($member =~ /^\s*\@(.+)\s*$/) {
+        if ($member =~ /^\@(.+)$/) {
             $_get_members_rec->($namespace, $1, $revision, $members);
         }
         push @{$members->{$key}}, $member;
