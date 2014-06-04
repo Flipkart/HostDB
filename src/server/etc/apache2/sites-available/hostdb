@@ -1,29 +1,29 @@
 NameVirtualHost *:443
 
-<VirtualHost *:443>
-    ServerName hostdb.domain.com
-    ServerAlias hostdbapi.domain.com
-    DocumentRoot /var/www/hostdb
-    
-    SSLEngine On
-    SSLCertificateFile /etc/ssl/crt/domain.crt
-    SSLCertificateKeyFile /etc/ssl/crt/domain.key
-    SSLCACertificateFile /etc/ssl/crt/ca.crt
-
-    LogFormat "%v:%{local}p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" %D" hostdb_log
-    CustomLog /var/log/apache2/hostdb_access.log hostdb_log
-    
-    Alias /bootstrap "/var/www/hostdb/bootstrap/"
-    Alias /assets "/var/www/hostdb/assets/"
-
-    RewriteEngine on
-    RewriteRule ^/(tags|hosts|spares) /index.html
- 
-    <Location /v1>
-        RewriteEngine On
-        RewriteRule ^(.+)$ /cgi-bin/hostdb_rest.fcgi [L]
-    </Location>
-</VirtualHost>
+#<VirtualHost *:443>
+#    ServerName hostdb.domain.com
+#    ServerAlias hostdbapi.domain.com
+#    DocumentRoot /var/www/hostdb
+#    
+#    SSLEngine On
+#    SSLCertificateFile /etc/ssl/crt/domain.crt
+#    SSLCertificateKeyFile /etc/ssl/crt/domain.key
+#    SSLCACertificateFile /etc/ssl/crt/ca.crt
+#
+#    LogFormat "%v:%{local}p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" %D" hostdb_log
+#    CustomLog /var/log/apache2/hostdb_access.log hostdb_log
+#    
+#    Alias /bootstrap "/var/www/hostdb/bootstrap/"
+#    Alias /assets "/var/www/hostdb/assets/"
+#
+#    RewriteEngine on
+#    RewriteRule ^/(tags|hosts) /index.html
+# 
+#    <Location /v1>
+#        RewriteEngine On
+#        RewriteRule ^(.+)$ /cgi-bin/hostdb_rest.fcgi [L]
+#    </Location>
+#</VirtualHost>
 
 <VirtualHost *:80>
     ServerName hostdb.domain.com
