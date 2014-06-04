@@ -305,9 +305,9 @@ sub usage {
         Get host IP:
             $0 get hosts/host1.yourdomain.com/Network/IP
         Get tag config:
-            $0 get tags/nm-prod
+            $0 get tags/tag1
         Get tag members:
-            $0 get tags/nm-prod/members",
+            $0 get tags/tag1/members",
 
         'multi_get' =>
 "        Get IPs of all hosts:
@@ -337,7 +337,7 @@ sub usage {
         Delete avoiding y/n prompt:
             $0 delete -y -m \"not needed anymore\" hosts/host1.yourdomain.com
         Remove host from tag:
-            $0 delete -m \"untag host\" tags/nm-prod/members/new.yourdomain.com",
+            $0 delete -m \"untag host\" tags/tag1/members/new.yourdomain.com",
 
         'rename' =>
 "        Rename an object:
@@ -347,7 +347,7 @@ sub usage {
 "        Add an object:
             $0 add hosts/host1.yourdomain.com
         Add host to tag:
-            $0 add -m \"adding new member\" tags/nm-prod/members/new.yourdomain.com
+            $0 add -m \"adding new member\" tags/tag1/members/new.yourdomain.com
         Add a tag to another tag's members:
             $0 add -m \"inherited members\" tags/log_backup/members/\@log_flo_backup",
 
@@ -357,7 +357,7 @@ sub usage {
         Edit an object, read data from file:
             $0 edit -f hostconfig.txt hosts/host1.yourdomain.com
         Edit members of a tag:
-            $0 edit tags/nm-prod/members",
+            $0 edit tags/tag1/members",
     );
     print <<EOM;
 USAGE:
