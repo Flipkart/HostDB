@@ -7,5 +7,5 @@ apt-get install libterm-readkey-perl libtext-diff-perl libyaml-syck-perl libwww-
 rsync -a --exclude "DEBIAN" src/client/ /
 
 echo "Setup complete."
-
+echo "Configure /etc/hostdb/client_conf.yaml"
 
