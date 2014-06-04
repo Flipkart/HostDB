@@ -4,7 +4,8 @@ set -e
 
 apt-get install git-core apache2 libapache2-mod-fcgid libyaml-syck-perl libnet-ldap-perl liblog-log4perl-perl libcrypt-cbc-perl libcgi-fast-perl libfcgi-perl libio-socket-inet6-perl libsocket6-perl liblog-dispatch-perl libcrypt-blowfish-perl libnetaddr-ip-perl
 
-rsync -a src/server/ /
+rsync -a --exclude "DEBIAN" src/server/ /
+rsync -a --exclude "DEBIAN" src/webui/ /
 
 # setup data dir
 NDIR=`grep namespace_dir src/server/etc/hostdb/server_conf.yaml | awk '{print $2}'`;
@@ -25,6 +26,7 @@ echo -e "---\nadmin:\n  data: RW\n  members: RW" > $NDIR/tags/.perms/.default
 pushd $NDIR && git init . && git add * && git commit -am "init" && popd
 
 src/server/DEBIAN/postinst
+/etc/init.d/apache2 restart
 
 echo "Setup complete. login with user 'admin' and passwd 'secret'"
 
