@@ -23,7 +23,9 @@ echo "server2.yourdomain.com" > $NDIR/tags/.members/tag2
 echo -e '@tag1\n@tag2' > $NDIR/tags/.members/tag3
 echo -e "---\nadmin:\n  data: RW" > $NDIR/hosts/.perms/.default
 echo -e "---\nadmin:\n  data: RW\n  members: RW" > $NDIR/tags/.perms/.default
-pushd $NDIR && git init . && git add * && git commit -am "init" && popd
+pushd $NDIR
+git init . && git add * && git commit -am "init"
+popd
 
 KEYFILE=`grep cipher_key_file src/server/etc/hostdb/server_conf.yaml | awk '{print $2}'`
 date | md5sum | cut -c1-8 > $KEYFILE
