@@ -33,5 +33,7 @@ date | md5sum | cut -c1-8 > $KEYFILE
 src/server/DEBIAN/postinst
 /etc/init.d/apache2 restart
 
+echo "------------------------------------------------------"
 echo "Setup complete. Configure SSL in /etc/apache2/sites-enabled/hostdb and login with user 'admin' and passwd 'secret'"
+echo "------------------------------------------------------"
 
