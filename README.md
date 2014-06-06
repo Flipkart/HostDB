@@ -107,6 +107,8 @@ HostDB has been central to almost all software written by the devops at flipkart
 Setting up Server
 ------------------
 
+Update: The install-server-debian.sh scripts does almost everything for you without creating debian packages.
+
 1. Go to src/server/
 2. Make config changes as necessary. You might need to modify these:
 
@@ -163,6 +165,8 @@ group1:
 Setting up CLI tool
 -------------------
 
+Update: The install-client-debian.sh scripts does almost everything for you without creating debian packages.
+
 1. Go to src/client
 2. Make config changes as necessary. You might need to modify these:
 
@@ -180,6 +184,8 @@ etc/hostdb/client_conf.yaml - Mention server name in this
 
 Setting up Web interface
 ------------------------
+
+Update: The install-server-debian.sh scripts does almost everything for you without creating debian packages.
 
 1. Go to src/webui/
 2. Make config changes as necessary. You might need to modify these:
