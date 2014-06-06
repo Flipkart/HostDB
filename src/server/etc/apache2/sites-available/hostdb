@@ -1,33 +1,31 @@
 NameVirtualHost *:443
 
-#<VirtualHost *:443>
-#    ServerName hostdb.domain.com
-#    ServerAlias hostdbapi.domain.com
-#    DocumentRoot /var/www/hostdb
-#    
-#    SSLEngine On
-#    SSLCertificateFile /etc/ssl/crt/domain.crt
-#    SSLCertificateKeyFile /etc/ssl/crt/domain.key
-#    SSLCACertificateFile /etc/ssl/crt/ca.crt
-#
-#    LogFormat "%v:%{local}p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" %D" hostdb_log
-#    CustomLog /var/log/apache2/hostdb_access.log hostdb_log
-#    
-#    Alias /bootstrap "/var/www/hostdb/bootstrap/"
-#    Alias /assets "/var/www/hostdb/assets/"
-#
-#    RewriteEngine on
-#    RewriteRule ^/(tags|hosts) /index.html
-# 
-#    <Location /v1>
-#        RewriteEngine On
-#        RewriteRule ^(.+)$ /cgi-bin/hostdb_rest.fcgi [L]
-#    </Location>
-#</VirtualHost>
+<VirtualHost *:443>
+    ServerName *
+    DocumentRoot /var/www/hostdb
+    
+    SSLEngine On
+    SSLCertificateFile /etc/ssl/crt/yourdomain.crt
+    SSLCertificateKeyFile /etc/ssl/crt/yourdomain.key
+    SSLCACertificateFile /etc/ssl/crt/ca.crt
+
+    LogFormat "%v:%{local}p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" %D" hostdb_log
+    CustomLog /var/log/apache2/hostdb_access.log hostdb_log
+    
+    Alias /bootstrap "/var/www/hostdb/bootstrap/"
+    Alias /assets "/var/www/hostdb/assets/"
+
+    RewriteEngine on
+    RewriteRule ^/(tags|hosts) /index.html
+ 
+    <Location /v1>
+        RewriteEngine On
+        RewriteRule ^(.+)$ /cgi-bin/hostdb_rest.fcgi [L]
+    </Location>
+</VirtualHost>
 
 <VirtualHost *:80>
-    ServerName hostdb.domain.com
-    ServerAlias hostdbapi.domain.com
+    ServerName *
     DocumentRoot  /usr/lib/cgi-bin/
     
     LogFormat "%v:%{local}p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" %D" hostdb_log
@@ -35,7 +33,7 @@ NameVirtualHost *:443
     
     RewriteEngine On
     RewriteRule ^/v1/?(.*)$ /hostdb_rest.fcgi [L]
-    RewriteRule ^/?(.*) https://hostdb.domain.com/$1 [L]
+    RewriteRule ^/?(.*) https://%{HTTP_HOST}/$1 [L]
 </VirtualHost>
 
 <IfModule mod_fcgid.c>

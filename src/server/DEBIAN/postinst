@@ -9,6 +9,8 @@ popd
 chown -R www-data:www-data /etc/hostdb /var/lib/hostdb /var/log/hostdb
 
 a2enmod fcgid
+a2enmod rewrite
+a2enmod ssl
 /etc/init.d/apache2 reload
 
 exit 0
