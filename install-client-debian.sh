@@ -6,7 +6,8 @@ apt-get install libterm-readkey-perl libtext-diff-perl libyaml-syck-perl libwww-
 
 rsync -a --exclude "DEBIAN" src/client/ /
 
+set +x
 echo "------------------------------------------------------"
-echo "Setup Compelte. Configure /etc/hostdb/client_conf.yaml"
+echo "Setup Compelte. Configure server name in /etc/hostdb/client_conf.yaml"
 echo "------------------------------------------------------"
 

@@ -31,9 +31,15 @@ KEYFILE=`grep cipher_key_file src/server/etc/hostdb/server_conf.yaml | awk '{pri
 date | md5sum | cut -c1-8 > $KEYFILE
 
 src/server/DEBIAN/postinst
+set +e
+set +x
 /etc/init.d/apache2 restart
 
 echo "------------------------------------------------------"
-echo "Setup complete. Configure SSL in /etc/apache2/sites-enabled/hostdb and login with user 'admin' and passwd 'secret'"
+echo "Setup complete."
+echo "Configure SSL in /etc/apache2/sites-enabled/hostdb"
+echo "Configure cookie domain name in /var/www/hostdb/index.html:317 and /etc/hostdb/server_conf.yaml"
+echo "Goto https://$(hostname -f) and login with creds admin:secret"
+echo "The UI is crap and buggy. Install client and use the CLI."
 echo "------------------------------------------------------"
 
