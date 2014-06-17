@@ -269,6 +269,11 @@ sub get {
             $logger->logconfess("4041: Resource $self->{id} does not exist.")
         }
     }
+    elsif ($self->{_content_type} eq 'yaml') {
+        # Validate if input is supposed to be yaml
+        my $v = Load($value);
+        $output = Dump($v);
+    }
     else {
         $output = $file_content;
     }
