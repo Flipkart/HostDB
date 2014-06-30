@@ -7,6 +7,7 @@ popd
 [ -d /var/log/hostdb ] || mkdir /var/log/hostdb
 
 chown -R www-data:www-data /etc/hostdb /var/lib/hostdb /var/log/hostdb
+chown root:root /etc/cron.d/hostdb
 
 a2enmod fcgid
 a2enmod rewrite
