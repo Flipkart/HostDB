@@ -1,3 +1,0 @@
-#!/bin/sh
-ERR=`git push --mirror origin 2>&1`
-[ $? -eq 0 ] || echo $ERR | mail -s "HostDB Replication Failure" jain.johny@flipkart.com
