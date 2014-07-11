@@ -22,6 +22,7 @@ while (my $cgi = new CGI::Fast) {
         load_conf();
         $got_hup = 0;
     }
+    my $client_ip_header = get_conf("server.client_ip_header") || 'REMOTE_ADDR';
     my $st = Benchmark->new;
     my $method = $cgi->request_method();
     my %params = $cgi->Vars;
@@ -59,7 +60,7 @@ while (my $cgi = new CGI::Fast) {
         $session = $cgi->cookie("HostDB") if (! $session);
         my $username;
         eval {
-            $username = validate_session($session, $ENV{REMOTE_ADDR});
+            $username = validate_session($session, $ENV{$client_ip_header});
         };
         if ($@) {
             print status_for_error($@);
@@ -75,8 +76,8 @@ while (my $cgi = new CGI::Fast) {
         if (exists $params{username} && exists $params{password}) {
             my $session;
             eval {
-                validate_credentials($params{username}, $params{password}, $ENV{REMOTE_ADDR});
-                $session = generate_session($params{username}, $ENV{REMOTE_ADDR});
+                validate_credentials($params{username}, $params{password}, $ENV{$client_ip_header});
+                $session = generate_session($params{username}, $ENV{$client_ip_header});
             };
             delete $params{password};
             if ($@) {
@@ -128,7 +129,7 @@ while (my $cgi = new CGI::Fast) {
             $params{session} = $cgi->cookie("HostDB");
         }
         eval {
-            $params{user} = validate_session($params{session}, $ENV{REMOTE_ADDR});
+            $params{user} = validate_session($params{session}, $ENV{$client_ip_header});
             $logger->debug("USERNAME = " . $params{user});
         };
         if ($@) {
