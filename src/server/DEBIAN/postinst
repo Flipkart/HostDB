@@ -11,6 +11,8 @@ chown root:root /etc/cron.d/hostdb
 
 KEY_FILE=`grep cipher_key_file /etc/hostdb/server_conf.yaml |awk '{print $2}'`
 [ -e "$KEY_FILE" ] || date | md5sum | cut -c1-8 > $KEY_FILE
+chmod 400 $KEY_FILE
+chown www-data:www-data $KEY_FILE
 
 a2enmod fcgid
 a2enmod rewrite
