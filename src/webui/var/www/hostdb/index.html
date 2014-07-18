@@ -560,7 +560,7 @@ Status: \n\
                     return;
                 }
                 data = 'value=' + escape($("#editBoxText").val()) + '&log=' + escape($("#editBoxLog").val()) ;
-                putContent(hostdbApi + id, data,
+                putContentSync(hostdbApi + id, data,
                     function(output) {
                         $('#editBox').modal('hide');
                         $(".nav-tabs").children(".active").click();
@@ -827,6 +827,21 @@ Status: \n\
                 url: url,
                 type: 'PUT',
                 data: data,
+                dataType: 'text',
+                success: function(output) {
+                    handleSuccess(output);
+                },
+                error: function(temp1, temp2, error) {
+                    handleError(error);
+                }
+            });
+        }
+        function putContentSync(url, data, handleSuccess, handleError) {
+            $.ajax({
+                url: url,
+                type: 'PUT',
+                data: data,
+		async: false,
                 dataType: 'text',
                 success: function(output) {
                     handleSuccess(output);
