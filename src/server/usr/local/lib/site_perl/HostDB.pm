@@ -275,7 +275,7 @@ sub get {
         my @parts = split /\//, $id;
         if ($id =~ /\/members$/) {
             foreach my $key (@keys) {
-                eval { $out->{$key} = [ _get_members($parts[0], $key) ] };
+                eval { $out->{$key} = join ' ', _get_members($parts[0], $key) };
                 $out->{$key} = undef if $@;
             }
         }
