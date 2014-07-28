@@ -8,6 +8,7 @@ popd
 
 chown -R www-data:www-data /etc/hostdb /var/lib/hostdb /var/log/hostdb /var/www
 chown root:root /etc/cron.d/hostdb
+chown root:root /etc/logrotate.d/hostdb
 
 KEY_FILE=`grep cipher_key_file /etc/hostdb/server_conf.yaml |awk '{print $2}'`
 [ -e "$KEY_FILE" ] || date | md5sum | cut -c1-8 > $KEY_FILE
