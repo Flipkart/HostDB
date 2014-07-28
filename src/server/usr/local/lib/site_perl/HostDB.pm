@@ -81,7 +81,7 @@ sub _get_parents {
     my @parents = $_get_parents_rec->($host);
     my %out = ();
     $out{$_} = 1 foreach(@parents);  # find unique
-    return (keys %out);
+    return (sort keys %out);
 }
 
 # http://www.perlmonks.org/?node_id=696592
@@ -116,7 +116,7 @@ sub _get_members {
             $out{$_} = 1;
         }
     }
-    return (keys %out);
+    return (sort keys %out);
 }
 
 sub _validate_member_addition {
@@ -263,7 +263,7 @@ sub get {
         my $tmp = $options->{foreach};
         $tmp =~ s/^\/+//; $tmp =~ s/\/+$//;
         my @keys;
-        if ($tmp =~ /\/members/) {
+        if ($tmp =~ /\/members$/) {
             my @p = split '/', $tmp;
             @keys = _get_members($p[0], $p[1], $options->{revision});
         }
@@ -273,12 +273,20 @@ sub get {
         }
         my $out = {};
         my @parts = split /\//, $id;
-        foreach my $key (@keys) {
-            $parts[1] = $key;
-            my $_id = join '/', @parts;
-            my $s = HostDB::FileStore->new($_id);
-            eval { $out->{$key} = Load(scalar $s->get($options->{revision})) };
-            $out->{$key} = undef if $@;
+        if ($id =~ /\/members$/) {
+            foreach my $key (@keys) {
+                eval { $out->{$key} = [ _get_members($parts[0], $key) ] };
+                $out->{$key} = undef if $@;
+            }
+        }
+        else {
+            foreach my $key (@keys) {
+                $parts[1] = $key;
+                my $_id = join '/', @parts;
+                my $s = HostDB::FileStore->new($_id);
+                eval { $out->{$key} = Load(scalar $s->get($options->{revision})) };
+                $out->{$key} = undef if $@;
+            }
         }
         $output = Dump($out);
     }
