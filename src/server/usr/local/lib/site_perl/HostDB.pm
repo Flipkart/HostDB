@@ -41,7 +41,7 @@ sub _get_parents {
 
     my $_get_parents_rec;
     $_get_parents_rec = sub {
-        my ($host, $pmap) = $@;
+        my ($host, $pmap) = @_;
         return () if (!exists $pmap->{$host});
         my @out = ();
     
@@ -57,7 +57,7 @@ sub _get_parents {
         # Try in cache
         $parents_map = cache_get("parents_map_$namespace");
     }
-    if ($revision || !$parents_map) {
+    if ($revision || ref($parents_map) ne 'HASH') {
         # Generates key->parents map for a namespace
         # This is heavy as we have to read all keys members in a namespace
         $parents_map = {};
