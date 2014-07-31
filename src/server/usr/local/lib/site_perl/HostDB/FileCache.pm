@@ -54,7 +54,7 @@ sub cache_get {
             cache_delete($key, 1);
             return;
         }
-        $mem_cache{$key} = $ref
+        $mem_cache{$key} = $ref;
         $mem_mtime{$key} = time;
     }
     return $mem_cache{$key};
