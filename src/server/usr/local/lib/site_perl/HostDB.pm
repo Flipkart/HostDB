@@ -38,27 +38,29 @@ use YAML::Syck;
 
 sub _get_parents {
     my ($host, $namespace, $revision) = @_;
-    my $parents_map = {};
 
     my $_get_parents_rec;
     $_get_parents_rec = sub {
-        my $host = shift;
-        return () if (!exists $parents_map->{$host});
+        my ($host, $pmap) = $@;
+        return () if (!exists $pmap->{$host});
         my @out = ();
     
-        foreach (@{$parents_map->{$host}}) {
+        foreach (@{$pmap->{$host}}) {
             push @out, $_;
             push @out, $_get_parents_rec->("\@$_");
         }
         return ( @out );
     };
-    
-    if (!$revision && cache_exists("parents_map_$namespace")) {
+    # Get parents map
+    my $parents_map;
+    if (!$revision) {
+        # Try in cache
         $parents_map = cache_get("parents_map_$namespace");
     }
-    else {
+    if ($revision || !$parents_map) {
         # Generates key->parents map for a namespace
         # This is heavy as we have to read all keys members in a namespace
+        $parents_map = {};
         my $keys_store = HostDB::FileStore->new($namespace);
         my @keys = $keys_store->get($revision);
         #$logger->debug( sub { Dumper(\@keys) } );
@@ -78,7 +80,7 @@ sub _get_parents {
         # Cache parents map of HEAD since it is a very common request
         cache_set("parents_map_$namespace", $parents_map) if (! $revision);
     }
-    my @parents = $_get_parents_rec->($host);
+    my @parents = $_get_parents_rec->($host, $parents_map);
     my %out = ();
     $out{$_} = 1 foreach(@parents);  # find unique
     return (sort keys %out);

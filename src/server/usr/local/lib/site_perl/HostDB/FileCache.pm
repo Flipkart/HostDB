@@ -41,10 +41,21 @@ sub cache_exists {
 
 sub cache_get {
     my $key = shift;
-    return unless cache_exists($key);
+    cache_exists($key) || return;
     # Read from disk if in-memory cache doesnt exist or is stale
     if (!exists $mem_cache{$key} || (stat("$cache_dir/$key"))[9] > $mem_mtime{$key}) {
-        $mem_cache{$key} = lock_retrieve("$cache_dir/$key") or $logger->logconfess("5032: Unable to retreive from $cache_dir/$key");
+        my $ref;
+        eval {
+            $ref = lock_retrieve("$cache_dir/$key");
+        };
+        $@ && $logger->logconfess("5032: Unable to retreive from $cache_dir/$key. $@");
+        if (!$ref) {
+            # Corrupted cache file
+            $logger->logcluck("Unable to retreive from $cache_dir/$key. File might be corrupted. Deleting it.");
+            cache_delete($key);
+            return;
+        }
+        $mem_cache{$key} = $ref
         $mem_mtime{$key} = time;
     }
     return $mem_cache{$key};
@@ -60,7 +71,7 @@ sub cache_set {
 
 sub cache_delete {
     my $key = shift;
-    return 1 unless cache_exists($key);
+    cache_exists($key) || return 1;
     unlink "$cache_dir/$key" or $logger->logconfess("5032: Can't delete file: $cache_dir/$key. $!");
     exists $mem_cache{$key} && delete $mem_cache{$key};
     exists $mem_mtime{$key} && delete $mem_mtime{$key};
