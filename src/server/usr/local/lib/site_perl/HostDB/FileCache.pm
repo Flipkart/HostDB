@@ -33,7 +33,7 @@ sub cache_exists {
     # invalidate if cache is old.
     my $exp = time - $cache_ttl;
     if ((stat("$cache_dir/$key"))[9] < $exp) {
-        unlink "$cache_dir/$key" or $logger->logconfess("5032: Can't delete file: $cache_dir/$key. $!");
+        cache_delete($key);
         return;
     }
     return 1;
@@ -48,11 +48,10 @@ sub cache_get {
         eval {
             $ref = lock_retrieve("$cache_dir/$key");
         };
-        $@ && $logger->logconfess("5032: Unable to retreive from $cache_dir/$key. $@");
-        if (!$ref) {
+        if ($@ || !$ref) {
             # Corrupted cache file
-            $logger->logcluck("Unable to retreive from $cache_dir/$key. File might be corrupted. Deleting it.");
-            cache_delete($key);
+            $logger->logcluck("Unable to retreive from $cache_dir/$key. Moving it to $cache_dir/$key.bak. $@");
+            cache_delete($key, 1);
             return;
         }
         $mem_cache{$key} = $ref
@@ -70,11 +69,14 @@ sub cache_set {
 }
 
 sub cache_delete {
-    my $key = shift;
-    cache_exists($key) || return 1;
-    unlink "$cache_dir/$key" or $logger->logconfess("5032: Can't delete file: $cache_dir/$key. $!");
-    exists $mem_cache{$key} && delete $mem_cache{$key};
-    exists $mem_mtime{$key} && delete $mem_mtime{$key};
+    my ($key, $backup) = @_;
+    -e "$cache_dir/$key" || return 1;
+    if ($backup) {
+        rename("$cache_dir/$key", "$cache_dir/$key.bak") or $logger->logconfess("5032: Can't rename $cache_dir/$key to $cache_dir/$key.bak. $!");
+    }
+    else {
+        unlink("$cache_dir/$key") or $logger->logconfess("5032: Can't delete file: $cache_dir/$key. $!");
+    }
     return 1;
 }
 
