@@ -47,7 +47,7 @@ sub _get_parents {
     
         foreach (@{$pmap->{$host}}) {
             push @out, $_;
-            push @out, $_get_parents_rec->("\@$_");
+            push @out, $_get_parents_rec->("\@$_", $pmap);
         }
         return ( @out );
     };
