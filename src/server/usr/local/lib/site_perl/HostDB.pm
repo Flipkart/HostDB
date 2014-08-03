@@ -178,6 +178,7 @@ sub _member_rename {
         my $s = HostDB::FileStore->new($id, {enable_vcs => 0});
         $s->rename($replace);
     }
+    return scalar keys %matching_files;
 }
 
 sub _member_delete {
@@ -203,6 +204,7 @@ sub _member_delete {
         my $s = HostDB::FileStore->new($id, {enable_vcs => 0});
         $s->delete();
     }
+    return scalar keys %matching_files;
 }
 
 =item I<get($id, \%options)> - Returns the value corresponding to the HostDB object as string
@@ -397,7 +399,6 @@ sub rename {
     my $store = HostDB::FileStore->new($id, $options);
     $store->_init_git({user => $options->{user}});
     $store->{_git}->txn_begin();
-
     # Check if ID is refering a key in a namespace.
     if (exists $store->{key} && $store->{id} eq "$store->{namespace}/$store->{key}") {
         # Yes. So it might have references in other namespace/key/members
@@ -407,18 +408,19 @@ sub rename {
             my $ndir = HostDB::FileStore->new("");
             foreach my $namespace ($ndir->get()) {
                 next if ($namespace =~ /^hosts\$/);
-                _member_rename($namespace, $store->{key}, $newname, $options);
+                _member_rename($namespace, $store->{key}, $newname, $options)
+		    && cache_delete("parents_map_$namespace");
             }
         }
         else {
             # If ID is not a host, rename all refs to it in the same namespace
-            _member_rename($store->{namespace}, "\@$store->{key}", "\@$newname", $options);
+            _member_rename($store->{namespace}, "\@$store->{key}", "\@$newname", $options)
+		&& cache_delete("parents_map_" . $store->{namespace});
         }
     }
     
     #finally, rename the actual object. This does a txn_commit also.
     $store->rename($newname, $options->{log}, $options->{user});
-    cache_delete("parents_map_" . $store->{namespace}); # Invalidate
     return wantarray ? (1, $store->mtime()) : 1;
 }
 
@@ -447,16 +449,16 @@ sub delete {
             my $ndir = HostDB::FileStore->new("");
             foreach my $namespace ($ndir->get()) {
                 next if ($namespace eq 'hosts');
-                _member_delete($namespace, $store->{key}, $options);
+                _member_delete($namespace, $store->{key}, $options)
+		    && cache_delete("parents_map_$namespace");
             }
         }
         else {
-            _member_delete($store->{namespace}, "\@$store->{key}", $options);
+            _member_delete($store->{namespace}, "\@$store->{key}", $options)
+		&& cache_delete("parents_map_" . $store->{namespace});
         }
     }
     $store->delete($options->{log}, $options->{user});
-    cache_delete("parents_map_" . $store->{namespace}); # Invalidate
-    
     return 1;
 }
 
