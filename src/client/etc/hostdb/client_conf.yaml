@@ -1,2 +1,3 @@
 ---
-server: hostdbapi.yourdomain.com
+hostdb_rw: hostdbapi.yourdomain.com
+hostdb_ro: hostdbapi.yourdomain.com

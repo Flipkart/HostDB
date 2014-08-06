@@ -43,7 +43,8 @@ use YAML::Syck;
 $ENV{"PERL_LWP_SSL_VERIFY_HOSTNAME"} = 0;
 
 my $conf = LoadFile('/etc/hostdb/client_conf.yaml');
-my $server = $conf->{server};
+my $hostdb_rw = $conf->{hostdb_rw};
+my $hostdb_ro = $conf->{hostdb_ro} || $conf->{hostdb_rw};
 my $proto = 'https';
 my $version = 'v1';
 
@@ -97,7 +98,8 @@ sub new {
         and croak("Options to HostDB::Client should be a hash reference.");
     
     my $self = bless {
-        api          => defined $opt->{"server"} ? "$proto://$opt->{server}/$version" : "$proto://$server/$version",
+        api_rw       => defined $opt->{"server"} ? "$proto://$opt->{server}/$version" : "$proto://$hostdb_rw/$version",
+        api_ro       => defined $opt->{"server"} ? "$proto://$opt->{server}/$version" : "$proto://$hostdb_ro/$version",
         read_only    => 1,
         user         => undef,
         session      => undef,
@@ -138,7 +140,7 @@ sub authenticate {
     my ($self, $arg1, $arg2) = @_;
     $self->{read_only} = 1;
     if (defined $arg1 && defined $arg2) {  # username and password are provided
-        my $response = $self->_ua_request('POST', "$self->{api}/auth/session", { "username"=>$arg1, "password"=>$arg2 });
+        my $response = $self->_ua_request('POST', "$self->{api_rw}/auth/session", { "username"=>$arg1, "password"=>$arg2 });
         if ($response->is_success) {
             my $content = $response->content;
             chomp $content;
@@ -148,7 +150,7 @@ sub authenticate {
         }
     }
     elsif (defined $arg1) {  # session id is provided
-        my $response = $self->_ua_request('GET', "$self->{api}/auth/session/$arg1");
+        my $response = $self->_ua_request('GET', "$self->{api_rw}/auth/session/$arg1");
         if ($response->is_success) {
             my $content = $response->content;
             chomp $content;
@@ -204,7 +206,7 @@ BOOLEAN $raw - Get raw format. Makes sense only when id is for 'members'
 
 sub get {
     my ($self, $id, $revision, $raw) = @_;
-    my $uri = "$self->{api}/$id";
+    my $uri = "$self->{api_ro}/$id";
     my $sep = '?';
     if (defined $revision) {
         $uri .= $sep . "revision=$revision";
@@ -227,7 +229,7 @@ STRING $revision - If specified, gets data from this revision
 
 sub multi_get {
     my ($self, $get_id, $list_id, $revision) = @_;
-    my $uri = "$self->{api}/$get_id?foreach=$list_id";
+    my $uri = "$self->{api_ro}/$get_id?foreach=$list_id";
     $uri .= "&revision=$revision" if defined $revision;
     my $response = $self->_ua_request('GET', $uri);
     return $response->is_success ? $response->content : undef;
@@ -243,7 +245,7 @@ STRING $namespace - Namespace to search for $host. Cannot be 'hosts'
 
 sub parents {
     my ($self, $host, $namespace) = @_;
-    my $response = $self->_ua_request('GET', "$self->{api}/hosts/$host?meta=parents&from=$namespace");
+    my $response = $self->_ua_request('GET', "$self->{api_ro}/hosts/$host?meta=parents&from=$namespace");
     return $response->is_success ? $response->content : undef;
 }
 
@@ -257,7 +259,7 @@ STRING $namespace - Namespace to search for $host. Cannot be 'hosts'
 
 sub derived {
     my ($self, $host, $namespace) = @_;
-    my $response = $self->_ua_request('GET', "$self->{api}/hosts/$host?meta=derived&from=$namespace");
+    my $response = $self->_ua_request('GET', "$self->{api_ro}/hosts/$host?meta=derived&from=$namespace");
     return $response->is_success ? $response->content : undef;
 }
 
@@ -271,7 +273,7 @@ INTEGER $limit - Max mumber of revisions to return. Default is 50.
 
 sub revisions {
     my ($self, $id, $limit) = @_;
-    my $url = "$self->{api}/$id?meta=revisions";
+    my $url = "$self->{api_ro}/$id?meta=revisions";
     $url .= "&limit=$limit" if (defined $limit);
     my $response = $self->_ua_request('GET', $url);
     return $response->is_success ? $response->content : undef;
@@ -300,7 +302,7 @@ sub set {
         'log'     => $log,
         'session' => $self->{session},
     };
-    my $response = $self->_ua_request('PUT', "$self->{api}/$id", $params);
+    my $response = $self->_ua_request('PUT', "$self->{api_rw}/$id", $params);
     return $response->is_success ? $response->content : undef;
 }
 
@@ -321,7 +323,7 @@ sub rename {
         'log'       => $log,
         'session'   => $self->{session},
     };
-    my $response = $self->_ua_request('POST', "$self->{api}/$id", $params);
+    my $response = $self->_ua_request('POST', "$self->{api_rw}/$id", $params);
     return $response->is_success ? $response->content : undef;
 }
 
@@ -335,7 +337,7 @@ STRING $log - commit message
 
 sub delete {
     my ($self, $id, $log) = @_;
-    my $response = $self->_ua_request('DELETE', "$self->{api}/$id?log=$log&session=$self->{session}");
+    my $response = $self->_ua_request('DELETE', "$self->{api_rw}/$id?log=$log&session=$self->{session}");
     return $response->is_success ? $response->content : undef;
 }
 
