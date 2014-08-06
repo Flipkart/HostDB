@@ -10,7 +10,7 @@ package HostDB::FileCache;
 
 require Exporter;
 use base qw(Exporter);
-our @EXPORT = qw(cache_exists cache_get cache_set cache_delete);
+our @EXPORT = qw(cache_exists cache_get cache_set cache_delete cache_lock cache_unlock);
 
 use strict;
 use HostDB::Shared qw( $logger &get_conf );
@@ -26,6 +26,7 @@ if (! -d $cache_dir) {
 
 my %mem_cache = (); # In-memory per-process cache which is filled from disk-cache objects
 my %mem_mtime = (); # Timestamp of in-memory items used to check if it is older than disk cache and invalidate accordingly
+my %lock_fh = (); # Store FDs to exclusive locks to cache items
 
 sub cache_exists {
     my $key = shift;
@@ -37,6 +38,21 @@ sub cache_exists {
         return;
     }
     return 1;
+}
+
+sub cache_lock {
+    my $key = shift;
+    $lock_fh{$key} && return 1;
+    open($lock_fh{$key}, '>', "$cache_dir/$key.lock") or return;
+    flock($lock_fh{$key}, 2);
+}
+
+sub cache_unlock {
+    my $key = shift;
+    if (exists $lock_fh{$key} && $lock_fh{$key}) {
+        close $lock_fh{$key};
+	delete $lock_fh{$key};
+    }
 }
 
 sub cache_get {

@@ -39,6 +39,31 @@ use YAML::Syck;
 sub _get_parents {
     my ($host, $namespace, $revision) = @_;
 
+    my $_gen_parents_map;
+    $_gen_parents_map = sub {
+        # Generates key->parents map for a namespace
+        # This is heavy as we have to read all keys members in a namespace
+	my ($ns, $rev) = @_;
+	my $pmap = {};
+        my $keys_store = HostDB::FileStore->new($ns);
+        my @keys = $keys_store->get($rev);
+        #$logger->debug( sub { Dumper(\@keys) } );
+        foreach my $key (@keys) {
+            my $members_store = HostDB::FileStore->new("$ns/$key/members");
+            my @members = $members_store->get($rev);
+            foreach my $mem (@members) {
+                $mem =~ s/\s+$//;
+                $mem =~ s/^\s+//;
+		next if $mem eq '';
+		next if $mem =~ /^\s*#/;
+                $pmap->{$mem} = [ ] if (!exists $pmap->{$mem});
+                push @{$pmap->{$mem}}, $key;
+                #$logger->debug(sub { Dumper $pmap });
+            }
+        }
+	return $pmap;
+    };
+
     my $_get_parents_rec;
     $_get_parents_rec = sub {
         my ($host, $pmap) = @_;
@@ -51,35 +76,26 @@ sub _get_parents {
         }
         return ( @out );
     };
-    # Get parents map
+
     my $parents_map;
-    if (!$revision) {
-        # Try in cache
-        $parents_map = cache_get("parents_map_$namespace");
+    if ($revision) {
+	$parents_map = $_gen_parents_map->($namespace, $revision);
     }
-    if ($revision || ref($parents_map) ne 'HASH') {
-        # Generates key->parents map for a namespace
-        # This is heavy as we have to read all keys members in a namespace
-        $parents_map = {};
-        my $keys_store = HostDB::FileStore->new($namespace);
-        my @keys = $keys_store->get($revision);
-        #$logger->debug( sub { Dumper(\@keys) } );
-        foreach my $key (@keys) {
-            my $members_store = HostDB::FileStore->new("$namespace/$key/members");
-            my @members = $members_store->get($revision);
-            foreach my $mem (@members) {
-                $mem =~ s/\s+$//;
-                $mem =~ s/^\s+//;
-		next if $mem eq '';
-		next if $mem =~ /^\s*#/;
-                $parents_map->{$mem} = [ ] if (!exists $parents_map->{$mem});
-                push @{$parents_map->{$mem}}, $key;
-                #$logger->debug(sub { Dumper $parents_map });
-            }
-        }
-        # Cache parents map of HEAD since it is a very common request
-        cache_set("parents_map_$namespace", $parents_map) if (! $revision);
+    else {
+	# Try in cache
+	$parents_map = cache_get("parents_map_$namespace");
+        if (! $parents_map) {
+	    cache_lock("parents_map_$namespace");
+	    # Check if cache got populated while waiting for lock
+	    $parents_map = cache_get("parents_map_$namespace");
+	    if (! $parents_map) {
+		$parents_map = $_gen_parents_map->($namespace);
+	        cache_set("parents_map_$namespace", $parents_map);
+	    }
+	    cache_unlock("parents_map_$namespace");
+	}
     }
+
     my @parents = $_get_parents_rec->($host, $parents_map);
     my %out = ();
     $out{$_} = 1 foreach(@parents);  # find unique
