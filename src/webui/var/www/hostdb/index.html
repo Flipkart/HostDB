@@ -372,57 +372,35 @@ Status: \n\
         });
         
         $("#liDerivedConfigTags").click(function(event) {
-            path = parsePath();
-            $("#derivedTags").children("#lstTags").html('');
-            $("#derivedTags").children("#txtConfig").val('');
-            query = 'hosts/' + path.key + '?meta=derived&from=tags';
-            if (!inHistory) {
-              history.pushState('', '', '/' + path.namespace + '/' + path.key + '?meta=derived&from=tags');
-            }
-            getContent(hostdbApi + query,
-                function(output) {
-                    $("#derivedTags").children("#txtConfig").val(output);
-                    var parents = Object.keys(jsyaml.load(output));
-                    var html = '';
-                    for (i=0, len=parents.length; i < parents.length; i++) {
-                        html = html + '<a href="/tags/' + parents[i] + '" style="padding: 0 10px">' + parents[i] + '</a>';
-                    }
-                    $("#derivedTags").children("#lstTags").html(html);
-                    if ($("#keys-list a")[0].href.search(/from=tags$/) < 0) {
-                        $("#keys-list a").each(function() {
-                            this.href = location.origin + '/' + path.namespace + '/' + this.text + '?meta=derived&from=tags';
-                        });
-                    }
-                },
-                function(error) {
-                    alert(error);
-                }
-            );
-            inHistory = false;
-            oldKey = path.key;
-            oldNamespace = path.namespace;
+            derivedConfig('tags');
         });
         
         $("#liDerivedConfigSpares").click(function(event) {
+            derivedConfig('spares');
+        });
+        
+        function derivedConfig(namespace) {
             path = parsePath();
-            $("#derivedSpares").children("#lstSpares").html('');
+            var Namespace = namespace.charAt(0).toUpperCase() + namespace.slice(1);
+            $("#derived" + Namespace).children("#lst" + Namespace).html('');
             $("#derivedSpates").children("#txtConfig").val('');
-            query = 'hosts/' + path.key + '?meta=derived&from=spares';
+            query = 'hosts/' + path.key + '?meta=derived&from=' + namespace;
             if (!inHistory) {
-              history.pushState('', '', '/' + path.namespace + '/' + path.key + '?meta=derived&from=spares');
+              history.pushState('', '', '/' + path.namespace + '/' + path.key + '?meta=derived&from=' + namespace);
             }
             getContent(hostdbApi + query,
                 function(output) {
-                    $("#derivedSpares").children("#txtConfig").val(output);
-                    var parents = Object.keys(YAML.eval(output));
+                    $("#derived" + Namespace).children("#txtConfig").val(output);
+                    var parents = Object.keys(jsyaml.load(output));
                     var html = '';
                     for (i=0, len=parents.length; i < parents.length; i++) {
-                        html = html + '<a href="/spares/' + parents[i] + '" style="padding: 0 10px">' + parents[i] + '</a>';
+                        html = html + '<a href="/' + namespace + '/' + parents[i] + '" style="padding: 0 10px">' + parents[i] + '</a>';
                     }
-                    $("#derivedSpares").children("#lstSpares").html(html);
-                    if ($("#keys-list a")[0].href.search(/from=spares$/) < 0) {
+                    $("#derived" + Namespace).children("#lst" + Namespace).html(html);
+                    var re = new RegExp('from=' + namespace + '$');
+                    if ($("#keys-list a")[0].href.search(re) < 0) {
                         $("#keys-list a").each(function() {
-                            this.href = location.origin + '/' + path.namespace + '/' + this.text + '?meta=derived&from=spares';
+                            this.href = location.origin + '/' + path.namespace + '/' + this.text + '?meta=derived&from=' + namespace;
                         });
                     }
                 },
@@ -433,8 +411,7 @@ Status: \n\
             inHistory = false;
             oldKey = path.key;
             oldNamespace = path.namespace;
-        });
-        
+        }
         $("#keys-list").click(function(event) {
             event.preventDefault();
             if (!inHistory) {
