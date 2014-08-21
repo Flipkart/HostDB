@@ -23,7 +23,13 @@ while (my $cgi = new CGI::Fast) {
         next;
     }
     if ($uri =~ /health\/ro$/) {
-        print "Content-type: text/html\n\nOK\n";
+        # for now, do not allow reads on master.
+        if (get_conf('server.read_only') ~~ ['1', 'on']) {
+    	    print "Content-type: text/html\n\nOK\n";
+        }
+        else {
+    	    print "Status: 404 This is HostDB master\n\n";
+        }
         next;
     }
     if ($uri =~ /health\/rw$/) {
