@@ -7,7 +7,7 @@ popd
 [ -d /var/log/hostdb ] || mkdir /var/log/hostdb
 
 chown -R www-data:www-data /etc/hostdb /var/lib/hostdb /var/log/hostdb /var/www
-chown root:root /etc/cron.d/hostdb
+chown root:root /etc/cron.d/hostdb*
 chown root:root /etc/logrotate.d/hostdb
 
 KEY_FILE=`grep cipher_key_file /etc/hostdb/server_conf.yaml |awk '{print $2}'`
