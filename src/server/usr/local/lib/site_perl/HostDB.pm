@@ -380,7 +380,9 @@ sub set {
             next if (/^\s*#/ || /^\s*$/);
             _validate_member_addition($store->{namespace}, $store->{key}, $_);
         }
+        cache_lock("parents_map_" . $store->{namespace});
         cache_delete("parents_map_" . $store->{namespace}); # Invalidate
+        cache_unlock("parents_map_" . $store->{namespace});
     }
 
     $store->set($value, $options->{log}, $options->{user});
@@ -424,14 +426,20 @@ sub rename {
             my $ndir = HostDB::FileStore->new("");
             foreach my $namespace ($ndir->get()) {
                 next if ($namespace =~ /^hosts\$/);
-                _member_rename($namespace, $store->{key}, $newname, $options)
-		    && cache_delete("parents_map_$namespace");
+                if (_member_rename($namespace, $store->{key}, $newname, $options)) {
+                    cache_lock("parents_map_$namespace");
+		    cache_delete("parents_map_$namespace");
+                    cache_unlock("parents_map_$namespace");
+                }
             }
         }
         else {
             # If ID is not a host, rename all refs to it in the same namespace
-            _member_rename($store->{namespace}, "\@$store->{key}", "\@$newname", $options)
-		&& cache_delete("parents_map_" . $store->{namespace});
+            if (_member_rename($store->{namespace}, "\@$store->{key}", "\@$newname", $options)) {
+		cache_lock("parents_map_" . $store->{namespace});
+		cache_delete("parents_map_" . $store->{namespace});
+		cache_unlock("parents_map_" . $store->{namespace});
+            }
         }
     }
     
@@ -465,13 +473,19 @@ sub delete {
             my $ndir = HostDB::FileStore->new("");
             foreach my $namespace ($ndir->get()) {
                 next if ($namespace eq 'hosts');
-                _member_delete($namespace, $store->{key}, $options)
-		    && cache_delete("parents_map_$namespace");
+                if (_member_delete($namespace, $store->{key}, $options)) {
+		    cache_lock("parents_map_$namespace");
+		    cache_delete("parents_map_$namespace");
+		    cache_unlock("parents_map_$namespace");
+                }
             }
         }
         else {
-            _member_delete($store->{namespace}, "\@$store->{key}", $options)
-		&& cache_delete("parents_map_" . $store->{namespace});
+            if (_member_delete($store->{namespace}, "\@$store->{key}", $options)) {
+		cache_lock("parents_map_" . $store->{namespace});
+		cache_delete("parents_map_" . $store->{namespace});
+		cache_unlock("parents_map_" . $store->{namespace});
+            }
         }
     }
     $store->delete($options->{log}, $options->{user});
