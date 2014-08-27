@@ -86,7 +86,7 @@ sub cache_set {
 
 sub cache_purge {
     opendir(my $dh, $cache_dir) or $logger->logconfess("5032: Unable to open $cache_dir");
-    @items = grep { !(/^\./ || /\.lock$/) } readdir($dh);
+    my @items = grep { !(/^\./ || /\.lock$/) } readdir($dh);
     closedir $dh;
     foreach my $key (@items) {
         cache_lock("$cache_dir/$key");

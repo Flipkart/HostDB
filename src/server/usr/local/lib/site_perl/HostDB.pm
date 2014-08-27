@@ -35,7 +35,7 @@ use HostDB::FileCache;
 use HostDB::ACL;
 use Data::Dumper;
 use YAML::Syck;
-use Digest::MD5 qw( md5_base64 );
+use Digest::MD5 qw( md5_hex );
 
 sub _get_parents {
     my ($host, $namespace, $revision) = @_;
@@ -285,7 +285,7 @@ sub get {
         $list_id =~ s/^\/+//; $list_id =~ s/\/+$//;
         
         my @parts = split /\//, $id;
-	my $cache_key = "multiget_$parts[0]_" . md5_base64("$list_id--$id");
+	my $cache_key = "multiget_$parts[0]_" . md5_hex("$list_id--$id");
         my $out = cache_get($cache_key);
         if (! $out) {
             cache_lock($cache_key);
@@ -298,6 +298,7 @@ sub get {
                     my @p = split '/', $list_id;
                     @keys = _get_members($p[0], $p[1], $options->{revision});
                     foreach my $key (@keys) {
+                        next if ($key =~ /^\s*$/);
                         eval { $out->{$key} = join ' ', _get_members($parts[0], $key) };
                         $out->{$key} = undef if $@;
                     }
@@ -306,6 +307,7 @@ sub get {
                     my $s = HostDB::FileStore->new($options->{foreach});
                     @keys = $s->get($options->{revision});
                     foreach my $key (@keys) {
+                        next if ($key =~ /^\s*$/);
                         $parts[1] = $key;
                         my $_id = join '/', @parts;
                         my $s = HostDB::FileStore->new($_id);
@@ -317,7 +319,6 @@ sub get {
             }
             cache_unlock($cache_key);
         }
-
         $output = Dump($out);
     }
     elsif ($store->{meta_info} eq 'members' && $store->{record}) {
@@ -433,12 +434,12 @@ sub rename {
             my $ndir = HostDB::FileStore->new("");
             foreach my $namespace ($ndir->get()) {
                 next if ($namespace =~ /^hosts\$/);
-                _member_rename($namespace, $store->{key}, $newname, $options))
+                _member_rename($namespace, $store->{key}, $newname, $options);
             }
         }
         else {
             # If ID is not a host, rename all refs to it in the same namespace
-            _member_rename($store->{namespace}, "\@$store->{key}", "\@$newname", $options))
+            _member_rename($store->{namespace}, "\@$store->{key}", "\@$newname", $options);
         }
     }
     
@@ -473,11 +474,11 @@ sub delete {
             my $ndir = HostDB::FileStore->new("");
             foreach my $namespace ($ndir->get()) {
                 next if ($namespace eq 'hosts');
-                _member_delete($namespace, $store->{key}, $options))
+                _member_delete($namespace, $store->{key}, $options);
             }
         }
         else {
-            _member_delete($store->{namespace}, "\@$store->{key}", $options))
+            _member_delete($store->{namespace}, "\@$store->{key}", $options);
         }
     }
     $store->delete($options->{log}, $options->{user});
