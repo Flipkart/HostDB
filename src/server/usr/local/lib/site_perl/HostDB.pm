@@ -35,6 +35,7 @@ use HostDB::FileCache;
 use HostDB::ACL;
 use Data::Dumper;
 use YAML::Syck;
+use Digest::MD5 qw( md5_base64 );
 
 sub _get_parents {
     my ($host, $namespace, $revision) = @_;
@@ -279,35 +280,44 @@ sub get {
             $output = Dump($out);
         }
     }
-    elsif (exists $options->{foreach}) {
-        my $tmp = $options->{foreach};
-        $tmp =~ s/^\/+//; $tmp =~ s/\/+$//;
-        my @keys;
-        if ($tmp =~ /\/members$/) {
-            my @p = split '/', $tmp;
-            @keys = _get_members($p[0], $p[1], $options->{revision});
-        }
-        else {
-            my $s = HostDB::FileStore->new($options->{foreach});
-            @keys = $s->get($options->{revision});
-        }
-        my $out = {};
+    elsif (exists $options->{foreach}) {  # Multiget
+        my $list_id = $options->{foreach};
+        $list_id =~ s/^\/+//; $list_id =~ s/\/+$//;
+        
         my @parts = split /\//, $id;
-        if ($id =~ /\/members$/) {
-            foreach my $key (@keys) {
-                eval { $out->{$key} = join ' ', _get_members($parts[0], $key) };
-                $out->{$key} = undef if $@;
+	my $cache_key = "multiget_$parts[0]_" . md5_base64("$list_id--$id");
+        my $out = cache_get($cache_key);
+        if (! $out) {
+            cache_lock($cache_key);
+            # Check if cache got populated while waiting for lock
+            $out = cache_get($cache_key);
+            if (! $out) {
+                $out = {};
+                my @keys;
+                if ($id =~ /\/members$/) {
+                    my @p = split '/', $list_id;
+                    @keys = _get_members($p[0], $p[1], $options->{revision});
+                    foreach my $key (@keys) {
+                        eval { $out->{$key} = join ' ', _get_members($parts[0], $key) };
+                        $out->{$key} = undef if $@;
+                    }
+                }
+                else {
+                    my $s = HostDB::FileStore->new($options->{foreach});
+                    @keys = $s->get($options->{revision});
+                    foreach my $key (@keys) {
+                        $parts[1] = $key;
+                        my $_id = join '/', @parts;
+                        my $s = HostDB::FileStore->new($_id);
+                        eval { $out->{$key} = Load(scalar $s->get($options->{revision})) };
+                        $out->{$key} = undef if $@;
+                    }
+                }
+                cache_set($cache_key, $out);
             }
+            cache_unlock($cache_key);
         }
-        else {
-            foreach my $key (@keys) {
-                $parts[1] = $key;
-                my $_id = join '/', @parts;
-                my $s = HostDB::FileStore->new($_id);
-                eval { $out->{$key} = Load(scalar $s->get($options->{revision})) };
-                $out->{$key} = undef if $@;
-            }
-        }
+
         $output = Dump($out);
     }
     elsif ($store->{meta_info} eq 'members' && $store->{record}) {
@@ -380,14 +390,11 @@ sub set {
             next if (/^\s*#/ || /^\s*$/);
             _validate_member_addition($store->{namespace}, $store->{key}, $_);
         }
-        cache_lock("parents_map_" . $store->{namespace});
-        cache_delete("parents_map_" . $store->{namespace}); # Invalidate
-        cache_unlock("parents_map_" . $store->{namespace});
     }
 
     $store->set($value, $options->{log}, $options->{user});
-    $logger->debug(sub {Dumper $store});
-    
+    #$logger->debug(sub {Dumper $store});
+    cache_purge();
     return wantarray ? (1, $store->mtime()) : 1;
 }
 
@@ -426,25 +433,18 @@ sub rename {
             my $ndir = HostDB::FileStore->new("");
             foreach my $namespace ($ndir->get()) {
                 next if ($namespace =~ /^hosts\$/);
-                if (_member_rename($namespace, $store->{key}, $newname, $options)) {
-                    cache_lock("parents_map_$namespace");
-		    cache_delete("parents_map_$namespace");
-                    cache_unlock("parents_map_$namespace");
-                }
+                _member_rename($namespace, $store->{key}, $newname, $options))
             }
         }
         else {
             # If ID is not a host, rename all refs to it in the same namespace
-            if (_member_rename($store->{namespace}, "\@$store->{key}", "\@$newname", $options)) {
-		cache_lock("parents_map_" . $store->{namespace});
-		cache_delete("parents_map_" . $store->{namespace});
-		cache_unlock("parents_map_" . $store->{namespace});
-            }
+            _member_rename($store->{namespace}, "\@$store->{key}", "\@$newname", $options))
         }
     }
     
     #finally, rename the actual object. This does a txn_commit also.
     $store->rename($newname, $options->{log}, $options->{user});
+    cache_purge();
     return wantarray ? (1, $store->mtime()) : 1;
 }
 
@@ -473,22 +473,15 @@ sub delete {
             my $ndir = HostDB::FileStore->new("");
             foreach my $namespace ($ndir->get()) {
                 next if ($namespace eq 'hosts');
-                if (_member_delete($namespace, $store->{key}, $options)) {
-		    cache_lock("parents_map_$namespace");
-		    cache_delete("parents_map_$namespace");
-		    cache_unlock("parents_map_$namespace");
-                }
+                _member_delete($namespace, $store->{key}, $options))
             }
         }
         else {
-            if (_member_delete($store->{namespace}, "\@$store->{key}", $options)) {
-		cache_lock("parents_map_" . $store->{namespace});
-		cache_delete("parents_map_" . $store->{namespace});
-		cache_unlock("parents_map_" . $store->{namespace});
-            }
+            _member_delete($store->{namespace}, "\@$store->{key}", $options))
         }
     }
     $store->delete($options->{log}, $options->{user});
+    cache_purge();
     return 1;
 }
 

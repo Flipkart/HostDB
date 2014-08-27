@@ -10,7 +10,7 @@ package HostDB::FileCache;
 
 require Exporter;
 use base qw(Exporter);
-our @EXPORT = qw(cache_exists cache_get cache_set cache_delete cache_lock cache_unlock);
+our @EXPORT = qw(cache_exists cache_get cache_set cache_purge cache_lock cache_unlock);
 
 use strict;
 use HostDB::Shared qw( $logger &get_conf );
@@ -34,7 +34,7 @@ sub cache_exists {
     # invalidate if cache is old.
     my $exp = time - $cache_ttl;
     if ((stat("$cache_dir/$key"))[9] < $exp) {
-        cache_delete($key);
+        unlink("$cache_dir/$key") or $logger->logconfess("5032: Can't delete file: $cache_dir/$key. $!");
         return;
     }
     return 1;
@@ -67,7 +67,7 @@ sub cache_get {
         if ($@ || !$ref) {
             # Corrupted cache file
             $logger->logcluck("Unable to retreive from $cache_dir/$key. Moving it to $cache_dir/$key.bak. $@");
-            cache_delete($key, 1);
+            rename("$cache_dir/$key", "$cache_dir/$key.bak") or $logger->logconfess("5032: Can't rename $cache_dir/$key to $cache_dir/$key.bak. $!");
             return;
         }
         $mem_cache{$key} = $ref;
@@ -84,14 +84,15 @@ sub cache_set {
     return 1;
 }
 
-sub cache_delete {
-    my ($key, $backup) = @_;
-    -e "$cache_dir/$key" || return 1;
-    if ($backup) {
-        rename("$cache_dir/$key", "$cache_dir/$key.bak") or $logger->logconfess("5032: Can't rename $cache_dir/$key to $cache_dir/$key.bak. $!");
-    }
-    else {
+sub cache_purge {
+    opendir(my $dh, $cache_dir) or $logger->logconfess("5032: Unable to open $cache_dir");
+    @items = grep { !(/^\./ || /\.lock$/) } readdir($dh);
+    closedir $dh;
+    foreach my $key (@items) {
+        cache_lock("$cache_dir/$key");
         unlink("$cache_dir/$key") or $logger->logconfess("5032: Can't delete file: $cache_dir/$key. $!");
+        unlink("$cache_dir/$key.lock");
+        cache_unlock("$cache_dir/$key");
     }
     return 1;
 }
