@@ -445,6 +445,10 @@ sub rename {
     
     #finally, rename the actual object. This does a txn_commit also.
     $store->rename($newname, $options->{log}, $options->{user});
+    if (open (my $mv_log, ">>", "/var/log/hostdb/rename.log")) {
+        print {$mv_log} localtime . ": $id, $newname\n";
+        close $mv_log;
+    }
     cache_purge();
     return wantarray ? (1, $store->mtime()) : 1;
 }
