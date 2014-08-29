@@ -303,7 +303,7 @@ sub set {
         'session' => $self->{session},
     };
     my $response = $self->_ua_request('PUT', "$self->{api_rw}/$id", $params);
-    return $response->is_success ? $response->content : undef;
+    return $response->is_success ? 1 : 0;
 }
 
 =item I<rename($id, $newname, $log)> - Renames a HostDB object.
@@ -324,7 +324,7 @@ sub rename {
         'session'   => $self->{session},
     };
     my $response = $self->_ua_request('POST', "$self->{api_rw}/$id", $params);
-    return $response->is_success ? $response->content : undef;
+    return $response->is_success ? 1 : 0;
 }
 
 =item I<delete($id, $log)> - Deletes a HostDB object.
@@ -338,7 +338,7 @@ STRING $log - commit message
 sub delete {
     my ($self, $id, $log) = @_;
     my $response = $self->_ua_request('DELETE', "$self->{api_rw}/$id?log=$log&session=$self->{session}");
-    return $response->is_success ? $response->content : undef;
+    return $response->is_success ? 1 : 0;
 }
 
 1;
