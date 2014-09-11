@@ -22,7 +22,8 @@ sub auth {
 
 sub groups {
     my $user = shift or $logger->logcroak("4001: Missing parameter - username");
-    my @groups = map { chomp; $_ } `/usr/bin/getent group | grep -E "(:| |,|)$user(,| |\$)" | cut -d: -f1`; # improve
+    #my @groups = map { chomp; $_ } `/usr/bin/getent group | grep -E "(:| |,|)$user(,| |\$)" | cut -d: -f1`; # improve
+    my @groups = map { chomp; $_ } `id $user | tr ' ' "\n" | grep "^groups=" | cut -f2 -d= | tr ',' "\n" | cut -f2 -d"(" | cut -f1 -d")"`;
     return @groups;
 }
 
