@@ -292,7 +292,7 @@ sub get {
             # Check if cache got populated while waiting for lock
             $output = cache_get($cache_key, 1);
             if (! $output) {
-                $out = {};
+                my $out = {};
                 my @keys;
                 if ($id =~ /\/members$/) {
                     my @p = split '/', $list_id;
