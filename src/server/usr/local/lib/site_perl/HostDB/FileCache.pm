@@ -15,7 +15,7 @@ our @EXPORT = qw(cache_exists cache_get cache_set cache_purge cache_lock cache_u
 use strict;
 use HostDB::Shared qw( $logger &get_conf );
 use Data::Dumper;
-use Storable qw(lock_store lock_retrieve);
+use Storable qw(freeze thaw);
 
 my $cache_dir = get_conf('server.cache_dir') || '/tmp/hostdb';
 my $cache_ttl = get_conf('server.cache_ttl') || 3600;
@@ -26,6 +26,7 @@ if (! -d $cache_dir) {
 
 my %mem_cache = (); # In-memory per-process cache which is filled from disk-cache objects
 my %mem_mtime = (); # Timestamp of in-memory items used to check if it is older than disk cache and invalidate accordingly
+my %mem_cache_serialized = ();
 my %lock_fh = (); # Store FDs to exclusive locks to cache items
 
 sub cache_exists {
@@ -56,13 +57,17 @@ sub cache_unlock {
 }
 
 sub cache_get {
-    my $key = shift;
+    my ($key, $serialized) = @_;
     cache_exists($key) || return;
     # Read from disk if in-memory cache doesnt exist or is stale
     if (!exists $mem_cache{$key} || (stat("$cache_dir/$key"))[9] > $mem_mtime{$key}) {
         my $ref;
+        open(my $fh, "<", "$cache_dir/$key");
+        flock($fh, 1);
+        my $data = do { local $/; <$fh> };
+        close $fh;
         eval {
-            $ref = lock_retrieve("$cache_dir/$key");
+            $ref = thaw($data);
         };
         if ($@ || !$ref) {
             # Corrupted cache file
@@ -70,16 +75,29 @@ sub cache_get {
             rename("$cache_dir/$key", "$cache_dir/$key.bak") or $logger->logconfess("5032: Can't rename $cache_dir/$key to $cache_dir/$key.bak. $!");
             return;
         }
+        $mem_cache_serialized{$key} = $data;
         $mem_cache{$key} = $ref;
         $mem_mtime{$key} = time;
     }
-    return $mem_cache{$key};
+    return ($serialized) ? $mem_cache_serialized{$key} : $mem_cache{$key};
 }
 
 sub cache_set {
     my ($key, $object) = @_;
-    lock_store($object, "$cache_dir/$key") or $logger->logconfess("5032: Unable to store in $cache_dir/$key");
-    $mem_cache{$key} = $object;
+    open(my $fh, "+<", "$cache_dir/$key");
+    flock($fh, 2);
+    seek($fh, 0, 0); truncate($fh, 0);
+    if (ref($object)) {
+        my $data = freeze $object;
+        print {$fh} $data;
+        $mem_cache{$key} = $object;
+        $mem_cache_serialized{$key} = $data;
+    }
+    else {
+        print {$fh} $object;
+        $mem_cache{$key} = $object;
+        $mem_cache_serialized{$key} = $object;
+    }
     $mem_mtime{$key} = time;
     return 1;
 }

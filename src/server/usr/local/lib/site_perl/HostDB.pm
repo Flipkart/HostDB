@@ -286,12 +286,12 @@ sub get {
         
         my @parts = split /\//, $id;
 	my $cache_key = "multiget_$parts[0]_" . md5_hex("$list_id--$id");
-        my $out = cache_get($cache_key);
-        if (! $out) {
+        $output = cache_get($cache_key, 1);
+        if (! $output) {
             cache_lock($cache_key);
             # Check if cache got populated while waiting for lock
-            $out = cache_get($cache_key);
-            if (! $out) {
+            $output = cache_get($cache_key, 1);
+            if (! $output) {
                 $out = {};
                 my @keys;
                 if ($id =~ /\/members$/) {
@@ -315,11 +315,11 @@ sub get {
                         $out->{$key} = undef if $@;
                     }
                 }
-                cache_set($cache_key, $out);
+                $output = Dump($out);
+                cache_set($cache_key, $output);
             }
             cache_unlock($cache_key);
         }
-        $output = Dump($out);
     }
     elsif ($store->{meta_info} eq 'members' && $store->{record}) {
         $output = $store->get($options->{revision});
