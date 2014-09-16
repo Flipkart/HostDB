@@ -66,14 +66,19 @@ sub cache_get {
         flock($fh, 1);
         my $data = do { local $/; <$fh> };
         close $fh;
-        eval {
-            $ref = thaw($data);
-        };
-        if ($@ || !$ref) {
-            # Corrupted cache file
-            $logger->logcluck("Unable to retreive from $cache_dir/$key. Moving it to $cache_dir/$key.bak. $@");
-            rename("$cache_dir/$key", "$cache_dir/$key.bak") or $logger->logconfess("5032: Can't rename $cache_dir/$key to $cache_dir/$key.bak. $!");
-            return;
+        if ($serialized) {
+            $ref = $data;
+        }
+        else {
+            eval {
+                $ref = thaw($data);
+            };
+            if ($@ || !$ref) {
+                # Corrupted cache file
+                $logger->logcluck("Unable to retreive from $cache_dir/$key. Moving it to $cache_dir/$key.bak. $@");
+                rename("$cache_dir/$key", "$cache_dir/$key.bak") or $logger->logconfess("5032: Can't rename $cache_dir/$key to $cache_dir/$key.bak. $!");
+                return;
+            }
         }
         $mem_cache_serialized{$key} = $data;
         $mem_cache{$key} = $ref;
@@ -84,9 +89,15 @@ sub cache_get {
 
 sub cache_set {
     my ($key, $object) = @_;
-    open(my $fh, "+<", "$cache_dir/$key");
-    flock($fh, 2);
-    seek($fh, 0, 0); truncate($fh, 0);
+    my $fh;
+    if (-e "$cache_dir/$key") {
+        open($fh, "+<", "$cache_dir/$key");
+        flock($fh, 2);
+        seek($fh, 0, 0); truncate($fh, 0);
+    }
+    else {
+        open($fh, ">", "$cache_dir/$key");
+    }
     if (ref($object)) {
         my $data = freeze $object;
         print {$fh} $data;
