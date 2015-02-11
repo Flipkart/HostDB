@@ -294,7 +294,7 @@ sub get {
             if (! $output) {
                 my $out = {};
                 my @keys;
-                if ($id =~ /\/members$/) {
+                if ($list_id =~ /\/members$/) {
                     my @p = split '/', $list_id;
                     @keys = _get_members($p[0], $p[1], $options->{revision});
                     foreach my $key (@keys) {
