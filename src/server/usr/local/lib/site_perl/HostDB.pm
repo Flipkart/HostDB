@@ -294,7 +294,7 @@ sub get {
             if (! $output) {
                 my $out = {};
                 my @keys;
-                if ($list_id =~ /\/members$/) {
+                if ($id =~ /\/members$/) {
                     my @p = split '/', $list_id;
                     @keys = _get_members($p[0], $p[1], $options->{revision});
                     foreach my $key (@keys) {
@@ -304,10 +304,17 @@ sub get {
                     }
                 }
                 else {
-                    my $s = HostDB::FileStore->new($options->{foreach});
-                    @keys = $s->get($options->{revision});
+		    if ($list_id =~ /\/members$/) {
+			my @p = split '/', $list_id;
+			@keys = _get_members($p[0], $p[1], $options->{revision});
+		    }
+		    else {
+                        my $s = HostDB::FileStore->new($list_id);
+                        @keys = $s->get($options->{revision});
+	            }
                     foreach my $key (@keys) {
                         next if ($key =~ /^\s*$/);
+			$key =~ s/\s+$//;
                         $parts[1] = $key;
                         my $_id = join '/', @parts;
                         my $s = HostDB::FileStore->new($_id);
