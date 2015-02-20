@@ -348,7 +348,7 @@ sub get {
     
     # Apply transforms on data if any.
     if (exists $options->{search}) {
-        my @match = grep { /$options->{search}/ } split /\n/, $output;
+        my @match = grep { /$options->{search}/ } split /\R/, $output;
         $output = join "\n", @match;
     }
     # Return also the mtime of object in LIST context
@@ -392,7 +392,7 @@ sub set {
             @members = map { s/\s+$//; $_ } ($store->{record});
         }
         else {
-            @members = map { s/\s+$//; $_ } split /\n/, $value;
+            @members = map { s/\s+$//; $_ } split /\R/, $value;
         }
         foreach (@members) {
             next if (/^\s*#/ || /^\s*$/);

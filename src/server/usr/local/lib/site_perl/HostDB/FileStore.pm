@@ -209,7 +209,7 @@ sub get {
         if ($revision) {
             $self->_init_git({user => "dummy"});
             my (undef, $out) = $self->{_git}->run('ls-tree', '--name-only', $revision, "$self->{_file}/");
-            foreach my $file (split "\n", $out) {
+            foreach my $file (split /\R/, $out) {
                 $file =~ s/^.*\///;
                 next if ($file =~ /^\./);
                 push @files, $file;
@@ -259,7 +259,7 @@ sub get {
         $output = Dump($data);
     }
     elsif ($self->{_content_type} eq 'list/part') {
-        foreach (split /\n/, $file_content) {
+        foreach (split /\R/, $file_content) {
             if ($_ eq $self->{record}) {
                 $output = $self->{record};
                 last;
@@ -274,7 +274,7 @@ sub get {
     }
     
     # If content is list and caller is in list context, return list. Else return scalar.
-    return (wantarray && $self->{_content_type} ~~ ['list', 'files']) ? split(/\n/, $output) : $output;
+    return (wantarray && $self->{_content_type} ~~ ['list', 'files']) ? split(/\R/, $output) : $output;
 }
 
 =item I<set($value, $log, $user)> - Create or modify a HostDB Object
@@ -635,7 +635,7 @@ sub revisions {
         $logger->logconfess("5002: git @cmd failed with code: $rc") if ($rc);
         chomp $out;
     }
-    return wantarray ? split "\n", $out : $out;
+    return wantarray ? split(/\R/, $out) : $out;
 }
 
 =item I<blame()> - Returns git blame of value represented by HostDB Object
