@@ -151,6 +151,7 @@ while (my $cgi = new CGI::Fast) {
     }
     elsif ($method eq 'PUT') {
         $params{value} = "" if (!exists $params{value});
+	$params{value} =~ s/\R/\n/g;
         eval {
             ($response, $mtime) = HostDB::set($id, $params{value}, \%params);
         };
