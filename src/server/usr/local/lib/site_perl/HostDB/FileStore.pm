@@ -456,7 +456,8 @@ sub rename {
     elsif ($self->{_content_type} eq 'list/part') {
         open(my $fh, "+<", $self->{_file}) or $logger->logconfess("5032: Can't write to file: $self->{_file}. $!");
         flock($fh, 2);
-        my @records = map {chomp; $_} <$fh>;
+	my $r = do { local $/; <$fh> };
+	my @records = split /\R/, $r;
         my $modified = 0;
         for (my $i=0; $i < scalar @records; $i++) {
             if ($records[$i] eq $newname) {
