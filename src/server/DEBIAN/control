@@ -3,7 +3,7 @@ Version: 1._VERSION_
 Section: flipkart/ops
 Priority: standard
 Depends: git-core, apache2, libapache2-mod-fcgid, libyaml-syck-perl, libnet-ldap-perl, liblog-log4perl-perl, libcrypt-cbc-perl, libcgi-fast-perl, libfcgi-perl, libio-socket-inet6-perl, libsocket6-perl, liblog-dispatch-perl, libcrypt-blowfish-perl, libnetaddr-ip-perl
-Replaces: apache2.2-common
+Replaces: apache2.2-common, apache2
 Architecture: all
 Maintainer: HostDB Dev <hostdb@flipkart.com>
 Description: HostDB server (core + api)
