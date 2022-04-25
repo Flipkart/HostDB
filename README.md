@@ -65,7 +65,7 @@ The complete file structure of HostDB is in a git repository and git handles the
 Web based Interface
 -------------------
 
-HostDB provides a Web based interface for uses to interact. 
+HostDB provides a Web based interface for users to interact. 
 
 
 Command Line tool
